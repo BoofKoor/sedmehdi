@@ -21,6 +21,11 @@ Checks, each a function returning its problems:
   layout     no layout shift on load, range, business and tab switches, at 1440 and 390
   bundle     first-load JS at most 250 KB gzipped, the other tabs and pages left for later (prints every chunk)
   keyboard   every control is reachable by Tab with a visible focus ring, and the picker, range and chart answer keys
+  names      every visible control, dialog, image, tab panel and table has an accessible name (the icon-only buttons
+             above all), on every page and overlay of every business, in both languages, at 1440 and 390
+  labels     text the reading direction or its room can garble, measured: a list's figure and its share or note stay
+             apart and in reading order, the radar's labels stay inside the figure and off the chart, and an
+             "up / total" pair reads left to right, for every business in both languages, at 1440 and 390
 
 --prove runs every check twice: first on a deliberately broken page (a fault injected by script, CSS or a rewritten
 response; the code shipped carries no switch for it), where it must FAIL, then on the real page, where it must PASS.
@@ -576,6 +581,112 @@ async def check_keyboard(browser, fault=None):
     return problems
 
 
+# The name a screen reader announces, by the accessible-name rules that matter here: aria-labelledby, aria-label, a
+# <label>, the text inside (aria-hidden and display:none subtrees left out; an SVG counts only by its label or <title>),
+# then title/placeholder/alt. Every visible control, dialog, image, tab panel and table must end up with one.
+NAMES = r"""() => {
+  const vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden'; };
+  const text = n => {
+    if (n.nodeType === 3) return n.textContent;
+    if (n.nodeType !== 1 || n.getAttribute('aria-hidden') === 'true' || getComputedStyle(n).display === 'none') return '';
+    if (n instanceof SVGElement) { const t = n.querySelector('title'); return n.getAttribute('aria-label') || (t ? t.textContent : ''); }
+    return [...n.childNodes].map(text).join('');
+  };
+  const name = e => {
+    const lb = e.getAttribute('aria-labelledby');
+    if (lb) return lb.split(/\s+/).map(id => { const r = document.getElementById(id); return r ? text(r) : ''; }).join(' ').trim();
+    const al = (e.getAttribute('aria-label') || '').trim(); if (al) return al;
+    if (e.labels && e.labels.length) { const l = [...e.labels].map(text).join(' ').trim(); if (l) return l; }
+    const t = text(e).replace(/\s+/g, ' ').trim(); if (t) return t;
+    return (e.getAttribute('title') || e.getAttribute('placeholder') || e.getAttribute('alt') || '').trim();
+  };
+  const sel = 'a[href], button, input:not([type=hidden]), select, textarea, [tabindex="0"], [role=button], [role=link], [role=tab], [role=radio], '
+    + '[role=checkbox], [role=switch], [role=menuitem], [role=menuitemradio], [role=option], [role=combobox], [role=listbox], [role=tablist], '
+    + '[role=radiogroup], [role=menu], [role=dialog], [role=img], [role=tabpanel], table';
+  const all = [...document.querySelectorAll(sel)].filter(e => vis(e) && !e.closest('[inert], [aria-hidden="true"]'));
+  return { seen: all.length, unnamed: all.filter(e => !name(e)).map(e => e.outerHTML.replace(/\s+/g, ' ').slice(0, 110)) };
+}"""
+
+async def check_names(browser, fault=None):
+    problems, seen = [], 0
+    for w, mobile in [(1440, False), (390, True)]:
+        for lang in ['en', 'fa']:
+            ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 900}, is_mobile=mobile, has_touch=mobile)
+            for p in PROFILES:
+                await goto(pg, f'{DEMO}?profile={p}&lang={lang}')
+                e0, e1 = await entity_paths(pg)
+                for h in ['#/', '#/growth', '#/retention', '#/behaviour', e0, e1, '#/health']:
+                    await nav(pg, h)
+                    r = await pg.evaluate(NAMES); seen += r['seen']
+                    for u in r['unnamed'][:2]: problems.append(f'{w}px {p} {lang} {h}: no name on {u}')
+                # the overlays: the record dialog (a row of the second table), the palette, the picker, the Demo menu
+                await nav(pg, e1)
+                await pg.locator('[data-testid="records-cards"] button' if mobile else 'tbody tr[tabindex="0"]').first.click()
+                for opener in [None, '[data-testid="palette-open"]', '[data-testid="business-picker"]', '#demo-menu-btn']:
+                    # the visible one: the palette's opener is drawn twice, the desktop copy hidden on phones
+                    if opener: await pg.locator(opener).locator('visible=true').first.click()
+                    await pg.wait_for_timeout(250)
+                    r = await pg.evaluate(NAMES); seen += r['seen']
+                    for u in r['unnamed'][:2]: problems.append(f'{w}px {p} {lang} {opener or "record dialog"}: no name on {u}')
+                    await pg.keyboard.press('Escape'); await pg.wait_for_timeout(150)
+            await ctx.close()
+    if not fault: REPORT['names_seen'] = seen
+    return problems
+
+
+# Text that the reading direction or the room it has can garble without any error: measured, not read.
+# 1. A figure and the share or note after it (BarList) are two boxes, apart, in reading order: as one inline run, in
+#    Persian «۹۸۱» and «۸۷٫۳٪ …» were reordered into one number, «۹۸۱۸۷٫۳٪».
+# 2. The radar's axis labels stay inside the figure, off its outer ring and off each other: as SVG text, a long rate name
+#    ("Proofs within 24h", «حضور در کلاس زنده») ran past the frame and was cut off.
+# 3. An "up / total" pair reads left to right in both languages: its first character is left of its last.
+LABELS = r"""() => {
+  const out = [], rtl = document.documentElement.dir === 'rtl', R = e => e.getBoundingClientRect();
+  const say = e => (e.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+  for (const v of document.querySelectorAll('[data-barlist-value]')) {
+    const [a, ...rest] = [...v.children].map(R);
+    if (!a || !a.width) continue;
+    for (const b of rest) {
+      const gap = rtl ? a.left - b.right : b.left - a.right;
+      if (gap < 3) out.push(`list value "${say(v)}": its parts are ${gap.toFixed(1)}px apart in reading order (needs 3)`);
+    }
+  }
+  for (const fig of document.querySelectorAll('[data-chart="radar"]')) {
+    const box = R(fig), ring = R(fig.querySelector('svg circle'));
+    const cx = ring.left + ring.width / 2, cy = ring.top + ring.height / 2, rad = ring.width / 2;
+    const labels = [...fig.querySelectorAll('[data-radar-label]')];
+    labels.forEach((l, i) => {
+      const r = R(l);
+      if (r.left < box.left - 1 || r.right > box.right + 1 || r.top < box.top - 1 || r.bottom > box.bottom + 1)
+        out.push(`radar label "${say(l)}" leaves the figure (${Math.round(r.left - box.left)}..${Math.round(r.right - box.left)} of ${Math.round(box.width)}px)`);
+      const nx = Math.max(r.left, Math.min(cx, r.right)), ny = Math.max(r.top, Math.min(cy, r.bottom));
+      if (Math.hypot(nx - cx, ny - cy) < rad - 1) out.push(`radar label "${say(l)}" falls on the chart`);
+      for (const m of labels.slice(i + 1)) { const s = R(m); if (r.left < s.right && s.left < r.right && r.top < s.bottom && s.top < r.bottom) out.push(`radar labels "${say(l)}" and "${say(m)}" overlap`); }
+    });
+  }
+  for (const p of document.querySelectorAll('[data-pair]')) {
+    const t = [...p.childNodes].find(n => n.nodeType === 3 && n.textContent.trim()); if (!t) continue;
+    const s = t.textContent, i0 = s.search(/\S/), i1 = s.length - 1 - [...s].reverse().join('').search(/\S/);
+    const at = i => { const r = document.createRange(); r.setStart(t, i); r.setEnd(t, i + 1); return r.getBoundingClientRect(); };
+    if (at(i0).left >= at(i1).left) out.push(`pair "${say(p)}" reads right to left`);
+  }
+  return out;
+}"""
+
+async def check_labels(browser, fault=None):
+    problems = []
+    for w, mobile, pages in [(1440, False, ['#/', '#/growth', '#/behaviour', '#/health']), (390, True, ['#/', '#/growth', '#/behaviour'])]:
+        for lang in ['en', 'fa']:
+            ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 900}, is_mobile=mobile, has_touch=mobile)
+            for p in PROFILES:
+                await goto(pg, f'{DEMO}?profile={p}&lang={lang}')
+                for h in pages:
+                    await nav(pg, h)
+                    for x in (await pg.evaluate(LABELS))[:2]: problems.append(f'{w}px {p} {lang} {h}: {x}')
+            await ctx.close()
+    return problems
+
+
 # ------------------------------------------------------------------------------------------------------------- runner
 FAULTS = {
     'hosts': Fault('a beacon to another host and a console error', init="addEventListener('DOMContentLoaded', () => { fetch('https://example.com/beacon').catch(() => {}); console.error('injected error'); });"),
@@ -595,11 +706,18 @@ FAULTS = {
         ('**/lab/admin/?*', lambda html: html.replace('</head>', '<script src="./assets/zz-noise.js"></script></head>')),
         ('**/lab/admin/assets/zz-noise.js', 'var noise = "' + base64.b64encode(os.urandom(300 * 1024)).decode() + '";')]),
     'keyboard': Fault('focus rings removed', css=':focus-visible { outline: none !important; box-shadow: none !important; } *:focus { box-shadow: none !important; outline: none !important; }'),
+    'names': Fault('icon-only buttons stripped of their labels', init="""new MutationObserver(() => document.querySelectorAll('[data-testid="theme-toggle"], [data-testid="dash-csv"]')
+        .forEach(e => { e.removeAttribute('aria-label'); e.removeAttribute('title'); e.querySelectorAll('span').forEach(s => s.remove()); }))
+        .observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-label', 'title'] });"""),
+    'labels': Fault('list figures as one inline run, radar labels unwrapped, pairs set right to left', css=
+        '[data-barlist-value] { display: inline !important; } [data-radar-label] { max-width: none !important; white-space: nowrap !important; } '
+        '[data-pair] { direction: rtl !important; }'),
 }
 
 CHECKS = [('hosts', check_hosts), ('render', check_render), ('csv', check_csv), ('palette', check_palette), ('theme_lang', check_theme_lang),
           ('overflow', check_overflow), ('phone_a11y', check_phone_a11y), ('motion', check_motion), ('entry', check_entry),
-          ('persist', check_persist), ('layout', check_layout), ('bundle', check_bundle), ('keyboard', check_keyboard)]
+          ('persist', check_persist), ('layout', check_layout), ('bundle', check_bundle), ('keyboard', check_keyboard),
+          ('names', check_names), ('labels', check_labels)]
 
 async def main():
     results, failed = [], 0
