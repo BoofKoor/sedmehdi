@@ -72,7 +72,7 @@ export function renderCell(p: BusinessProfile, e: EntityDef, col: ColumnDef, v: 
     case "number":
       return formatNumber(v as number);
     case "money":
-      return formatMoney(v as number, p.currency);
+      return formatMoney(v as number, p.currency, false, col.digits ?? 2);
     case "percent":
       return formatPct(v as number);
     case "ms":

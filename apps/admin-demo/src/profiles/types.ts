@@ -145,6 +145,8 @@ export interface ColumnDef {
   gen(r: Rng, row: Record<string, CellValue>, ctx: GenContext): CellValue;
   /** Hidden from the phone card layout (still in the dialog and the CSV). */
   secondary?: boolean;
+  /** Money: decimals printed in every row of the column (default 2), so it never mixes $1,800 and $840.00. */
+  digits?: number;
 }
 
 export type Person = { name: L; handle: string; initials: L };

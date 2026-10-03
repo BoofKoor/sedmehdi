@@ -56,7 +56,8 @@ export function formatPct(n: number | null | undefined, digits = 1): string {
   return getLocale() === "fa" ? `${v}٪` : `${v}%`;
 }
 
-export function formatMoney(n: number, currency = "USD", compact = false): string {
+/** `digits` fixes the decimals (a table column prints every row alike); without it, cents show below 1,000. */
+export function formatMoney(n: number, currency = "USD", compact = false, digits?: number): string {
   if (!Number.isFinite(n)) return "—";
   if (compact && Math.abs(n) >= 100_000) {
     return memo(`money-c-${currency}`, () =>
@@ -69,9 +70,9 @@ export function formatMoney(n: number, currency = "USD", compact = false): strin
       }),
     ).format(n);
   }
-  const digits = Math.abs(n) >= 1000 ? 0 : 2;
-  return memo(`money-${currency}-${digits}`, () =>
-    new Intl.NumberFormat(localeTag(), { style: "currency", currency, minimumFractionDigits: digits, maximumFractionDigits: digits }),
+  const d = digits ?? (Math.abs(n) >= 1000 ? 0 : 2);
+  return memo(`money-${currency}-${d}`, () =>
+    new Intl.NumberFormat(localeTag(), { style: "currency", currency, minimumFractionDigits: d, maximumFractionDigits: d }),
   ).format(n);
 }
 

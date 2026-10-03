@@ -151,6 +151,7 @@ export const saas: BusinessProfile = {
           id: "mrr",
           label: L("MRR", "درآمد ماهانه"),
           kind: "money",
+          digits: 0,
           gen: (_r, row) => {
             const plan = row.plan as { en: string };
             return (PRICE[plan.en] ?? 12) * (row.seats as number);

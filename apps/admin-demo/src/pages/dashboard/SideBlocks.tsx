@@ -7,7 +7,7 @@ import { clsx } from "clsx";
 import { Radio, UserPlus, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { RadarRates } from "@/components/charts/RadarRates";
+import { RADAR_ASPECT, RadarRates } from "@/components/charts/RadarRates";
 import { CountUp } from "@/components/ui/CountUp";
 import { EmptyState, ErrorState, Loading, Skeleton } from "@/components/ui/States";
 import type { DashboardData } from "@/data/dashboard";
@@ -76,7 +76,7 @@ export function HealthLine({ def, value, last }: { def: HealthDef; value: number
         {tl(def.name)}
         <span className="sr-only">: {t(bad ? "health.slow" : "health.ok")}</span>
       </span>
-      <b className="shrink-0 font-medium text-content" dir={def.kind === "nodes" ? "ltr" : undefined} style={{ unicodeBidi: "isolate" }}>
+      <b className="shrink-0 font-medium text-content" dir={def.kind === "nodes" ? "ltr" : undefined} style={{ unicodeBidi: "isolate" }} data-pair={def.kind === "nodes" || undefined}>
         {healthReading(def, value)}
       </b>
     </div>
@@ -107,7 +107,7 @@ export function SideBlocks({ p, q }: { p: BusinessProfile; q: DemoQuery<Dashboar
           <ErrorState compact onRetry={q.retry} />
         ) : !d ? (
           <Loading>
-            <Skeleton className="mx-auto aspect-[340/254] w-full max-w-[340px] rounded-full opacity-60" />
+            <Skeleton className="mx-auto w-full max-w-[340px] rounded-full opacity-60" style={{ aspectRatio: RADAR_ASPECT }} />
           </Loading>
         ) : d.empty ? (
           <EmptyState className="py-6" />

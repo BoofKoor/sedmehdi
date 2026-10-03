@@ -66,15 +66,19 @@ export function BarList({
   const max = Math.max(1, ...items.map((i) => i.value));
   const total = items.reduce((a, b) => a + b.value, 0);
   return (
-    <ul className="space-y-3" data-testid={testId}>
+    <ul className="space-y-3" data-testid={testId} data-barlist>
       {items.map((it) => (
         <li key={it.label}>
           <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
             <span className="min-w-0 truncate text-content">{it.label}</span>
-            <span className="shrink-0 tabular-nums text-content">
+            {/* Separate flex items, not one inline run: two numbers side by side are one run to the bidi
+                algorithm, so in Persian «۹۸۱» and «۸۷٫۳٪ …» were reordered into one figure, «۹۸۱۸۷٫۳٪», with
+                the gap outside them. A <bdi> does not settle it: holding only digits it resolves LTR, and its
+                margin lands on the wrong side. */}
+            <span className="flex shrink-0 items-baseline gap-1.5 tabular-nums text-content" data-barlist-value>
               <b className="font-semibold">{format(it.value)}</b>
-              {share && total > 0 && <span className="ms-1.5 text-xs text-content-muted">{formatPct((it.value / total) * 100)}</span>}
-              {it.note && <span className="ms-1.5 text-xs text-content-muted">{it.note}</span>}
+              {share && total > 0 && <span className="text-xs text-content-muted">{formatPct((it.value / total) * 100)}</span>}
+              {it.note && <span className="text-xs text-content-muted">{it.note}</span>}
             </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-surface-sunken">

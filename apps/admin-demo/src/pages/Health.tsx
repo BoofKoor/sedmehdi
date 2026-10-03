@@ -79,8 +79,16 @@ export default function Health() {
                   {t(bad ? "health.slow" : "health.ok")}
                 </Badge>
               </div>
-              <div className="text-[1.6rem] font-bold leading-none tracking-[-0.02em] text-content" dir={def.kind === "nodes" ? "ltr" : undefined} style={{ unicodeBidi: "isolate" }}>
-                {def.kind === "nodes" ? reading(def, v) : <CountUp value={v} format={(n) => reading(def, n)} />}
+              <div className="text-[1.6rem] font-bold leading-none tracking-[-0.02em] text-content">
+                {/* An "up / total" pair reads left to right in both languages; dir on the inline run, not the block,
+                    which would also move it to the card's left edge in Persian. */}
+                {def.kind === "nodes" ? (
+                  <span dir="ltr" style={{ unicodeBidi: "isolate" }} data-pair>
+                    {reading(def, v)}
+                  </span>
+                ) : (
+                  <CountUp value={v} format={(n) => reading(def, n)} />
+                )}
               </div>
               <MiniTrend values={live.history[def.id] ?? []} className="h-10" />
               <p className="text-[11px] text-content-muted">{t(def.kind === "latency" ? "health.probeTrend" : "health.probeTrendOther")}</p>
