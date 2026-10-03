@@ -5,14 +5,17 @@ import type { CollectionEntry } from 'astro:content';
 import Arrow from './Arrow.astro';
 import Tag from './Tag.astro';
 import { statusState } from '../data/status';
-interface Props { projects: CollectionEntry<'projects'>[] }
-const { projects } = Astro.props;
+// `lab`: show a project's on-site live demo (its `lab` path) as a pill on its card. The pill is its own link, so it is not
+// nested in the card's: a layer the card's size shares its grid cell, sticks with it, and shrinks and dims with it (--p).
+// Every card names its cell, so the layer can share it without pushing the card into a new row or column.
+interface Props { projects: CollectionEntry<'projects'>[]; lab?: boolean }
+const { projects, lab = false } = Astro.props;
 const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? new URL(p.data.demo).hostname : p.id);
 const n = String(projects.length).padStart(2, '0');
 ---
 <div class="stack">
   {projects.map((project, i) => { const p = project.data, id = project.id; return (
-    <a class="st-card" href={`/projects/${id}/`} style={`--i: ${i};${p.accent ? ` --accent: ${p.accent};` : ''}${p.logo ? ` --tint: ${p.logo.tint}; --logo-bg: ${p.logo.bg};` : ''}`} aria-labelledby={`st-t-${id}`} aria-describedby={`st-d-${id}`}>
+    <><a class="st-card" href={`/projects/${id}/`} style={`--i: ${i}; grid-area: ${i + 1} / 1;${p.accent ? ` --accent: ${p.accent};` : ''}${p.logo ? ` --tint: ${p.logo.tint}; --logo-bg: ${p.logo.bg};` : ''}`} aria-labelledby={`st-t-${id}`} aria-describedby={`st-d-${id}`}>
       <div class="st-inner">
         <div class="st-text">
           {p.logo && <span class="pj-logo" aria-hidden="true"><img src={p.logo.src} alt="" width="64" height="64" decoding="async" /></span>}
@@ -33,6 +36,7 @@ const n = String(projects.length).padStart(2, '0');
         </div>
       </div>
     </a>
+    {lab && p.lab && <div class="st-lab" style={`--i: ${i}; grid-area: ${i + 1} / 1;${p.accent ? ` --accent: ${p.accent};` : ''}`}><a class="st-lab-btn" href={p.lab}><span class="st-lab-dot" aria-hidden="true"></span>Live Demo<span class="vh"> of the {p.title} admin panel</span></a></div>}</>
   ); })}
 </div>
 <script is:inline>
@@ -47,6 +51,7 @@ const n = String(projects.length).padStart(2, '0');
         var next = cards[i + 1], p = 0;
         if (next && c.offsetParent) p = Math.max(0, Math.min(1, 1 - (next.getBoundingClientRect().top - c.getBoundingClientRect().top) / c.offsetHeight));
         c.style.setProperty('--p', p.toFixed(3));
+        var layer = c.nextElementSibling; if (layer && layer.classList.contains('st-lab')) layer.style.setProperty('--p', p.toFixed(3));
       });
     }
     window.__smStack = function () { if (!queued) { queued = true; requestAnimationFrame(update); } };

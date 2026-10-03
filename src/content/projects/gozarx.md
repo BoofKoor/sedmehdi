@@ -8,6 +8,7 @@ stack: ["Python", "aiogram 3", "FastAPI", "PostgreSQL", "Redis", "Docker Compose
 metric: { value: "119k", label: "Registered users" }
 github: "https://github.com/BoofKoor/GozarX"
 demo: "https://gozarx.net"
+lab: "/lab/admin/?profile=vpn"   # the admin panel as a white-label demo with synthetic data (apps/admin-demo)
 cover: { src: "/projects/gozarx.webp", alt: "The GozarX locations page, with the countries a free config is offered in" }
 accent: "#020617"   # sampled from the site background; white text 20.17:1
 logo: { src: "/projects/logos/gozarx.svg", bg: "#0B1222", tint: "#2563EB" }   # from the project repo; tint sampled from the logo

@@ -23,6 +23,7 @@ import { statusState } from '../../data/status';
   <section class="section" style="padding-bottom: 0">
     <h1 class="display vtt" style={`--vtt: vt-t-${project.id}`}>{p.title}</h1>
     <p class="lead">{p.summary}</p>
+    {p.lab && <div class="actions case-lab"><a class="btn-gray" href={p.lab}>Try the Live Demo<span class="vh"> of the admin panel</span></a></div>}
     {p.cover && p.device === 'phone' && <figure class="case-device vtc" style={`${p.accent ? `--accent:${p.accent};` : ''} --vtc: vt-c-${project.id}`}><span class="phone"><span class="window-view phone-view"><img src={p.cover.src} alt={p.cover.alt} width="780" height="1688" decoding="async" /></span></span></figure>}
     {p.cover && p.device !== 'phone' && <figure class="window case-window vtc" style={`--vtc: vt-c-${project.id}`}><div class="window-bar" aria-hidden="true"><span class="window-url"><svg viewBox="0 0 12 14" focusable="false"><path d="M3 6V4a3 3 0 0 1 6 0v2M2 6h8v7H2z"/></svg>{p.demo ? new URL(p.demo).hostname : project.id}</span></div><div class="window-view"><img src={p.cover.src} alt={p.cover.alt} width="1600" height="1000" decoding="async" /></div></figure>}
   </section>

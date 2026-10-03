@@ -10,5 +10,5 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.order -
     <h1 class="display">Work</h1>
     <p class="lead">Projects I designed, built and still run, with the problems behind them and the numbers after.</p>
   </section>
-  <div style="padding-bottom: var(--space-9)"><div class="work-desk"><WorkStack projects={projects} /></div><div class="work-phone"><ProjectGrid projects={projects} /></div></div>
+  <div style="padding-bottom: var(--space-9)"><div class="work-desk"><WorkStack projects={projects} lab /></div><div class="work-phone"><ProjectGrid projects={projects} lab /></div></div>
 </Base>

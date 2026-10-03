@@ -595,6 +595,27 @@ a, button { -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) { .st-inner { transform: none !important; filter: none !important; } .st-media .window, .st-media .phone { transition: none !important; } }
 
+/* A project's live demo on the Work page (its `lab` path): a pill in the card's top corner, opposite the number. It is its
+   own link, so it cannot sit inside the card's: it lives in a layer the card's size that shares the card's grid cell,
+   sticks at the card's offset, and shrinks and dims with the card's content (--p), so it reads as part of the card. On
+   phones it is a button under the card. The checks in scripts/qa/check_admin_demo.py hold it clear of the card's text,
+   logo tile and frame, at 44px and 4.5:1, at five widths in both themes. */
+.st-lab { position: sticky; top: calc(var(--bar-h) + var(--space-5) + var(--i) * 18px); align-self: start; height: min(540px, calc(100svh - var(--bar-h) - 140px));
+          pointer-events: none; transform-origin: 50% 0; transform: scale(calc(1 - .06 * var(--p, 0))); filter: brightness(calc(1 - .45 * var(--p, 0))); }
+.st-lab-btn { pointer-events: auto; position: absolute; top: var(--space-7); right: var(--space-7); display: inline-flex; align-items: center; gap: var(--space-2);
+              min-height: var(--target-min); padding: 0 18px; border-radius: var(--radius-capsule); color: #fff; text-decoration: none;
+              font-size: var(--text-callout); line-height: 1.2; font-weight: var(--weight-semibold); border: 1px solid rgba(255, 255, 255, .24);
+              /* opaque, mixed from the card's own colour: it reads as part of the card, and its contrast does not depend on
+                 what is underneath (the layer is not inside the card, so a translucent fill measured against the page) */
+              background: color-mix(in srgb, var(--accent, #1F1F1F) 86%, #FFFFFF); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 10px 24px -12px rgba(0, 0, 0, .6);
+              transition: background-color var(--duration) var(--ease), transform var(--duration) var(--ease); }
+.st-lab-btn:hover { color: #fff; background: color-mix(in srgb, var(--accent, #1F1F1F) 78%, #FFFFFF); transform: translateY(-1px); }
+.st-lab-btn:focus-visible { outline: 2px solid var(--color-tint); outline-offset: 3px; }
+.st-lab-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #30D158; box-shadow: 0 0 0 3px rgba(48, 209, 88, .25); }
+.fr-lab { grid-column: 1 / -1; justify-self: start; gap: var(--space-2); }
+.case-lab { margin-top: var(--space-5); }
+@media (prefers-reduced-motion: reduce) { .st-lab { transform: none !important; filter: none !important; } .st-lab-btn { transition: none; } .st-lab-btn:hover { transform: none; } }
+
 /* ======================================================================================================================
    PROJECT LOGOS on the cards (approved: "C1 app tile"). The logo sits in an app-icon tile beside the title, on its own
    colour, and a soft glow of the brand colour rises from the card's top corner (34% at the corner, gone at 62% of the
