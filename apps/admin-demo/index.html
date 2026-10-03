@@ -25,6 +25,12 @@
         var t = q.get("theme"); if (t !== "light" && t !== "dark") t = get("sm-theme");
         if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         d.setAttribute("data-profile", p); d.setAttribute("data-theme", t); d.lang = l; d.dir = l === "fa" ? "rtl" : "ltr";
+        // Persian text is drawn in Vazirmatn: fetch it with the page rather than after the first
+        // paint, so the text does not reflow when it lands.
+        if (l === "fa") ["Regular", "Bold"].forEach(function (w) {
+          var k = document.createElement("link"); k.rel = "preload"; k.as = "font"; k.type = "font/woff2"; k.crossOrigin = "";
+          k.href = "./fonts/Vazirmatn-" + w + ".woff2"; document.head.appendChild(k);
+        });
       })();
     </script>
     <style>
@@ -53,6 +59,7 @@
     </style>
   </head>
   <body>
+    <a class="demo-skip" id="skip-link" href="#main"><span data-l="en">Skip to content</span><span data-l="fa">پرش به محتوا</span></a>
     <!-- The portfolio's frame around the demo: always on, in the page's language, before any
          script runs. The Demo button gets its menu from the app once it mounts. -->
     <div class="demo-banner" id="demo-banner">

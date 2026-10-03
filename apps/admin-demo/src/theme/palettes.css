@@ -24,7 +24,8 @@
 }
 
 /* Passway (vpn) */
-:root[data-profile="vpn"] {
+:root[data-profile="vpn"],
+[data-profile-scope="vpn"] {
   --bg: 234 237 247; /* #EAEDF7 */
   --surface: 255 255 255; /* #FFFFFF */
   --surface-sunken: 247 248 252; /* #F7F8FC */
@@ -57,7 +58,8 @@
   --chart-1: 80 95 228; /* #505FE4 */
   --chart-2: 200 120 0; /* #C87800 */
 }
-:root[data-profile="vpn"][data-theme="dark"] {
+:root[data-profile="vpn"][data-theme="dark"],
+:root[data-theme="dark"] [data-profile-scope="vpn"] {
   --bg: 28 35 73; /* #1C2349 */
   --surface: 45 54 106; /* #2D366A */
   --surface-sunken: 37 45 88; /* #252D58 */
@@ -92,7 +94,8 @@
 }
 
 /* Loopdesk (saas) */
-:root[data-profile="saas"] {
+:root[data-profile="saas"],
+[data-profile-scope="saas"] {
   --bg: 234 238 239; /* #EAEEEF */
   --surface: 255 255 255; /* #FFFFFF */
   --surface-sunken: 246 248 249; /* #F6F8F9 */
@@ -125,7 +128,8 @@
   --chart-1: 0 152 164; /* #0098A4 */
   --chart-2: 185 72 52; /* #B94834 */
 }
-:root[data-profile="saas"][data-theme="dark"] {
+:root[data-profile="saas"][data-theme="dark"],
+:root[data-theme="dark"] [data-profile-scope="saas"] {
   --bg: 23 42 45; /* #172A2D */
   --surface: 38 65 68; /* #264144 */
   --surface-sunken: 32 54 56; /* #203638 */
@@ -160,7 +164,8 @@
 }
 
 /* Fernloft (ecommerce) */
-:root[data-profile="ecommerce"] {
+:root[data-profile="ecommerce"],
+[data-profile-scope="ecommerce"] {
   --bg: 235 238 236; /* #EBEEEC */
   --surface: 255 255 255; /* #FFFFFF */
   --surface-sunken: 247 248 247; /* #F7F8F7 */
@@ -193,7 +198,8 @@
   --chart-1: 5 137 62; /* #05893E */
   --chart-2: 128 89 187; /* #8059BB */
 }
-:root[data-profile="ecommerce"][data-theme="dark"] {
+:root[data-profile="ecommerce"][data-theme="dark"],
+:root[data-theme="dark"] [data-profile-scope="ecommerce"] {
   --bg: 31 42 33; /* #1F2A21 */
   --surface: 49 64 52; /* #314034 */
   --surface-sunken: 40 53 43; /* #28352B */
@@ -228,7 +234,8 @@
 }
 
 /* Quillstone (education) */
-:root[data-profile="education"] {
+:root[data-profile="education"],
+[data-profile-scope="education"] {
   --bg: 238 236 242; /* #EEECF2 */
   --surface: 255 255 255; /* #FFFFFF */
   --surface-sunken: 248 248 250; /* #F8F8FA */
@@ -261,7 +268,8 @@
   --chart-1: 133 78 206; /* #854ECE */
   --chart-2: 187 126 0; /* #BB7E00 */
 }
-:root[data-profile="education"][data-theme="dark"] {
+:root[data-profile="education"][data-theme="dark"],
+:root[data-theme="dark"] [data-profile-scope="education"] {
   --bg: 42 34 57; /* #2A2239 */
   --surface: 64 53 84; /* #403554 */
   --surface-sunken: 53 44 70; /* #352C46 */
@@ -296,7 +304,8 @@
 }
 
 /* Proofpost (print) */
-:root[data-profile="print"] {
+:root[data-profile="print"],
+[data-profile-scope="print"] {
   --bg: 240 237 235; /* #F0EDEB */
   --surface: 255 255 255; /* #FFFFFF */
   --surface-sunken: 249 248 247; /* #F9F8F7 */
@@ -329,7 +338,8 @@
   --chart-1: 205 84 0; /* #CD5400 */
   --chart-2: 0 131 207; /* #0083CF */
 }
-:root[data-profile="print"][data-theme="dark"] {
+:root[data-profile="print"][data-theme="dark"],
+:root[data-theme="dark"] [data-profile-scope="print"] {
   --bg: 47 36 31; /* #2F241F */
   --surface: 71 56 49; /* #473831 */
   --surface-sunken: 59 46 40; /* #3B2E28 */

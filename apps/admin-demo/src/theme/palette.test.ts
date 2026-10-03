@@ -27,6 +27,9 @@ function pairs(t: Theme): [string, string, string, number][] {
   p.push(["white on hero-a", "#FFFFFF", t["hero-a"], 4.5]);
   p.push(["white on hero-b", "#FFFFFF", t["hero-b"], 4.5]);
   p.push(["hero pill ink on white", t["hero-ink"], "#FFFFFF", 4.5]);
+  for (const fill of ["brand-800", "brand-900"]) p.push([`avatar initials on ${fill}`, "#FFFFFF", t[fill], 4.5]);
+  // The retention table's lighter cells carry body ink on brand tints.
+  for (const a of [0.15, 0.3, 0.4]) p.push([`text on a brand/${a * 100} cell`, t.text, over(t["brand-500"], a, t.surface), 4.5]);
   for (const g of ["surface", "surface-sunken"]) {
     p.push([`control border on ${g}`, t["line-control"], t[g], 3]);
     p.push([`chart-1 on ${g}`, t["chart-1"], t[g], 3]);

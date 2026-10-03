@@ -37,10 +37,10 @@ export const vpn: BusinessProfile = {
   currency: "USD",
   reference: "2026-10-01",
   launched: "2025-02-10",
-  week: [1.06, 0.97, 0.96, 0.97, 0.99, 1.03, 1.08],
+  week: [1.1, 0.94, 0.92, 0.95, 0.98, 1.05, 1.14],
   hours: [5, 3, 2, 1.5, 1.2, 1.4, 2.4, 4, 5.5, 6, 6.2, 6.5, 7, 6.8, 6.5, 6.6, 7.2, 8, 9.2, 10.4, 11, 10.6, 9, 7],
   series: {
-    primary: { label: L("Configs issued", "کانفیگ‌های صادرشده"), unit: L("configs", "کانفیگ"), base: 2140, growth: 0.55, noise: 0.07 },
+    primary: { label: L("Configs issued", "کانفیگ‌های صادرشده"), unit: L("configs", "کانفیگ"), base: 2140, growth: 0.55, noise: 0.09 },
     secondary: { label: L("New users", "کاربران جدید"), unit: L("users", "کاربر"), base: 96, growth: 0.4, noise: 0.12 },
   },
   streams: {
@@ -97,7 +97,7 @@ export const vpn: BusinessProfile = {
     { id: "control", name: L("Control plane API", "API کنترل"), kind: "latency", base: 86, warn: 220, side: true, flaky: 0.05 },
     { id: "gateways", name: L("Edge gateways", "گیت‌وی‌های لبه"), kind: "nodes", base: 12, warn: 11, side: true, flaky: 0.08 },
     { id: "auth", name: L("Auth service", "سرویس احراز هویت"), kind: "latency", base: 42, warn: 150, side: true, flaky: 0.03 },
-    { id: "conversion", name: L("Conversion, {days} days", "تبدیل، {days} روز"), kind: "percent", base: 74, warn: 50, side: true, flaky: 0 },
+    { id: "links", name: L("Subscription links", "لینک‌های اشتراک"), kind: "latency", base: 64, warn: 240, side: true, flaky: 0.03 },
     { id: "webhook", name: L("Signup webhook", "وب‌هوک ثبت‌نام"), kind: "queue", base: 3, warn: 40, flaky: 0.04 },
     { id: "dns", name: L("DNS resolvers", "سرورهای DNS"), kind: "latency", base: 18, warn: 80, flaky: 0.02 },
   ],

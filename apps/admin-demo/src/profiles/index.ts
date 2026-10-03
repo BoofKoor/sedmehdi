@@ -10,5 +10,5 @@ export const PROFILES: Record<ProfileId, BusinessProfile> = { vpn, saas, ecommer
 
 export const PROFILE_LIST: BusinessProfile[] = PROFILE_IDS.map((id) => PROFILES[id]);
 
-export { BRANDS, PROFILE_IDS, isProfileId, type ProfileId } from "./brands";
+export { BRANDS, PROFILE_IDS, isProfileId, type Brand, type ProfileId } from "./brands";
 export type * from "./types";

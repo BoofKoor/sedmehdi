@@ -20,6 +20,20 @@ export default defineConfig({
     // No `data:` inlining: every asset is a same-origin file, so the request list in the QA run
     // is the whole truth about what the page loads.
     assetsInlineLimit: 0,
+    // Named chunks, so the report's size table reads as what it is: React, the icon set, the
+    // generator with its five business profiles, and the app. The pages and dashboard tabs other
+    // than the overview are split per route by their dynamic imports.
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: "react", test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 3 },
+            { name: "vendor", test: /node_modules[\\/]/, priority: 2 },
+            { name: "data", test: /src[\\/](data|profiles)[\\/]/, priority: 1 },
+          ],
+        },
+      },
+    },
   },
   test: {
     environment: "node",

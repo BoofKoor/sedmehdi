@@ -243,8 +243,10 @@ export function toCss(all = buildAll()) {
   css += block(':root[data-theme="dark"]', SHARED.dark);
   for (const id of PROFILE_IDS) {
     css += `\n/* ${BRANDS[id].name} (${id}) */\n`;
-    css += block(`:root[data-profile="${id}"]`, all[id].light);
-    css += block(`:root[data-profile="${id}"][data-theme="dark"]`, all[id].dark);
+    // `data-profile-scope` re-scopes a subtree to another business: the Business picker previews
+    // each option in that business's own colours.
+    css += block(`:root[data-profile="${id}"],\n[data-profile-scope="${id}"]`, all[id].light);
+    css += block(`:root[data-profile="${id}"][data-theme="dark"],\n:root[data-theme="dark"] [data-profile-scope="${id}"]`, all[id].dark);
   }
   return css;
 }

@@ -110,7 +110,7 @@ function mondayOf(day: number): number {
   return day - ((weekdayOf(day) + 6) % 7);
 }
 
-function initialHealth(p: BusinessProfile, def: HealthDef, today: number, stats: { conversion: number }): number {
+function initialHealth(p: BusinessProfile, def: HealthDef, today: number): number {
   const s = (p.seed ^ hash32(`health:${def.id}`)) >>> 0;
   switch (def.kind) {
     case "latency":
@@ -120,9 +120,7 @@ function initialHealth(p: BusinessProfile, def: HealthDef, today: number, stats:
     case "queue":
       return Math.max(0, Math.round(def.base * (0.6 + unit(s + 1, today) * 0.8)));
     case "percent":
-      return def.id === "conversion"
-        ? Math.round(stats.conversion * 10) / 10
-        : Math.round((def.base + 0.4 * valueNoise(s + 2, today, 5)) * 10) / 10;
+      return Math.round((def.base + 0.4 * valueNoise(s + 2, today, 5)) * 10) / 10;
   }
 }
 
@@ -174,7 +172,6 @@ export function buildDashboard(p: BusinessProfile, range: number, now: Date, emp
   // Live statistics, as of `now` (the ticker moves them from here).
   const week = windowStats(p, 7, now);
   const hourWeight = p.hours[now.getHours()] / Math.max(...p.hours);
-  const conversion = empty ? 0 : rates[0].value ?? 0;
   const live = {
     online: empty ? 0 : Math.round(week.active * p.live.online.share * (0.35 + 0.65 * hourWeight)),
     onlineOf: empty ? 0 : week.active,
@@ -187,7 +184,7 @@ export function buildDashboard(p: BusinessProfile, range: number, now: Date, emp
           : lifetime(p, p.live.lifetime.stream, now)) * (p.live.lifetime.scale ?? 1),
     lifetimeFormat: p.live.lifetime.format,
   };
-  const health = p.health.map((def) => ({ def, value: initialHealth(p, def, today, { conversion }) }));
+  const health = p.health.map((def) => ({ def, value: initialHealth(p, def, today) }));
 
   // Growth: the running total, new against returning people per day, and the funnel.
   const before = empty ? 0 : stats.total - days.reduce((s, d) => s + d.secondary, 0);

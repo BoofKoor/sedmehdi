@@ -22,6 +22,10 @@ export const UI = {
   "shell.theme.toLight": { en: "Switch to the light theme", fa: "رفتن به تم روشن" },
   "shell.liveDot": { en: "Live figures update every few seconds", fa: "آمار زنده هر چند ثانیه به‌روز می‌شود" },
   "shell.liveDotPaused": { en: "Live figures are paused", fa: "آمار زنده متوقف است" },
+  "shell.switchLang": { en: "Switch to Persian (فارسی)", fa: "تغییر زبان به انگلیسی (English)" },
+  "shell.sections": { en: "Sections", fa: "بخش‌ها" },
+  "nav.dashboard": { en: "Dashboard", fa: "داشبورد" },
+  "nav.health": { en: "Health", fa: "سلامت" },
 
   // business picker
   "biz.label": { en: "Business", fa: "کسب‌وکار" },
@@ -79,6 +83,7 @@ export const UI = {
   "palette.persian": { en: "فارسی (Persian)", fa: "فارسی" },
   "palette.current": { en: "current", fa: "فعلی" },
   "palette.lastDays": { en: "Last {n} days", fa: "{n} روز گذشته" },
+  "palette.footer": { en: "↑ ↓ to move · Enter to run · Esc to close", fa: "↑ ↓ برای حرکت · Enter برای اجرا · Esc برای بستن" },
 
   // shortcuts
   "keys.title": { en: "Keyboard shortcuts", fa: "میانبرهای صفحه‌کلید" },
@@ -145,6 +150,7 @@ export const UI = {
   // states
   "state.error": { en: "This request failed. The demo is in error mode: switch the data back to Live in the Demo menu.", fa: "این درخواست شکست خورد. دمو در حالت خطاست: در منوی دمو داده را به «زنده» برگردانید." },
   "state.retry": { en: "Try again", fa: "دوباره امتحان کن" },
+  "state.errorShort": { en: "Couldn't load this.", fa: "بارگذاری نشد." },
   "state.empty": { en: "Nothing here yet", fa: "هنوز چیزی اینجا نیست" },
   "state.emptyMsg": { en: "This workspace has no data. Switch the data back to Live in the Demo menu to fill it.", fa: "این فضای کاری داده‌ای ندارد. برای پر شدنش، در منوی دمو داده را به «زنده» برگردانید." },
   "state.loading": { en: "Loading…", fa: "در حال بارگذاری…" },
@@ -192,6 +198,69 @@ export const UI = {
   "health.resolved": { en: "Resolved", fa: "برطرف شد" },
   "health.lasted": { en: "lasted {d}", fa: "مدت {d}" },
   "health.probeTrend": { en: "Latency over the last few minutes", fa: "تأخیر در چند دقیقهٔ اخیر" },
+
+  // keyboard (late additions)
+  "keys.business": { en: "Switch business", fa: "تغییر کسب‌وکار" },
+
+  // dashboard, more
+  "dash.side.panel": { en: "Rates, live figures and service health", fa: "نرخ‌ها، آمار زنده و سلامت سرویس" },
+  "dash.side.ratesScope": { en: "{n} days", fa: "{n} روز" },
+  "dash.delta.sr": { en: "{dir} {pct} against the previous {days} days", fa: "{dir} {pct} نسبت به {days} روز قبل" },
+  "dash.delta.flat": { en: "no change", fa: "بدون تغییر" },
+  "dash.tops": { en: "Top items", fa: "برترین‌ها" },
+  "dash.kpis": { en: "Key figures", fa: "شاخص‌های اصلی" },
+  "dash.chart.partialLegend": { en: "Today, still filling", fa: "امروز، هنوز در جریان" },
+
+  // growth, retention, behaviour
+  "growth.ofPrev": { en: "{pct} of the step before", fa: "{pct} از مرحلهٔ قبل" },
+  "growth.cumulativeSub": { en: "Running total at the end of each day", fa: "مجموع در پایان هر روز" },
+  "retention.week": { en: "Signup week", fa: "هفتهٔ ثبت‌نام" },
+  "retention.size": { en: "People", fa: "نفر" },
+  "retention.weekN": { en: "Week {n}", fa: "هفتهٔ {n}" },
+  "retention.cell": { en: "{pct} of {n} people", fa: "{pct} از {n} نفر" },
+  "retention.avg": { en: "Week 1 average: {pct}", fa: "میانگین هفتهٔ ۱: {pct}" },
+  "behaviour.busiest": { en: "Busiest: {when}", fa: "شلوغ‌ترین: {when}" },
+  "behaviour.when": { en: "{day} at {hour}", fa: "{day} ساعت {hour}" },
+
+  // records
+  "records.sub": { en: "{n} {things} · synthetic, the same for every visitor", fa: "{n} {things} · ساختگی و برای همهٔ بازدیدکنندگان یکسان" },
+  "records.showing": { en: "Showing {from}–{to} of {n}", fa: "نمایش {from} تا {to} از {n}" },
+  "records.anyStatus": { en: "Any status", fa: "همهٔ وضعیت‌ها" },
+  "records.anyValue": { en: "All", fa: "همه" },
+  "records.statusChanged": { en: "{name} is now {status}. Saved in this tab only.", fa: "وضعیت {name} شد «{status}». فقط در همین تب ذخیره شد." },
+  "records.edited": { en: "edited", fa: "ویرایش‌شده" },
+
+  // csv
+  "csv.section": { en: "Section", fa: "بخش" },
+  "csv.metric": { en: "Metric", fa: "شاخص" },
+  "csv.item": { en: "Item", fa: "مورد" },
+  "csv.date": { en: "Date", fa: "تاریخ" },
+  "csv.value": { en: "Value", fa: "مقدار" },
+  "csv.previous": { en: "Previous period", fa: "دورهٔ قبل" },
+  "csv.change": { en: "Change %", fa: "تغییر ٪" },
+  "csv.note": { en: "Note", fa: "یادداشت" },
+  "csv.kpi": { en: "Key figure", fa: "شاخص اصلی" },
+  "csv.daily": { en: "Daily", fa: "روزانه" },
+  "csv.top": { en: "Top", fa: "برترین" },
+  "csv.rate": { en: "Rate", fa: "نرخ" },
+  "csv.cumulative": { en: "Running total", fa: "مجموع تجمعی" },
+  "csv.split": { en: "New and returning", fa: "جدید و بازگشتی" },
+  "csv.funnel": { en: "Funnel", fa: "قیف" },
+  "csv.ofPrevious": { en: "% of the step before", fa: "٪ از مرحلهٔ قبل" },
+  "csv.cohort": { en: "Cohort", fa: "گروه" },
+  "csv.distribution": { en: "Distribution", fa: "توزیع" },
+  "csv.heatmap": { en: "Weekday and hour", fa: "روز هفته و ساعت" },
+  "csv.segment": { en: "Segment", fa: "بخش‌بندی" },
+  "csv.list": { en: "Top list", fa: "فهرست برترین‌ها" },
+  "csv.handle": { en: "handle", fa: "شناسه" },
+
+  // health, more
+  "health.probes": { en: "Live probes", fa: "بررسی‌های زنده" },
+  "health.probeTrendOther": { en: "Readings over the last few minutes", fa: "خوانش‌ها در چند دقیقهٔ اخیر" },
+  "health.uptimeAria": { en: "{name}: {pct} uptime over 90 days, {n} days with issues", fa: "{name}: {pct} زمان فعال در ۹۰ روز، {n} روز با مشکل" },
+  "health.day.ok": { en: "No issues", fa: "بدون مشکل" },
+  "health.day.minor": { en: "Minor issues", fa: "مشکل جزئی" },
+  "health.day.major": { en: "Incident", fa: "رخداد" },
 } as const satisfies Record<string, Pair>;
 
 export type UiKey = keyof typeof UI;
