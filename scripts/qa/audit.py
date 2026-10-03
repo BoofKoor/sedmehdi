@@ -8,7 +8,10 @@ from playwright.async_api import async_playwright
 import sys
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:4321'
 PAGES = ['/', '/projects/', '/projects/gozarx/', '/projects/tooti/', '/projects/jozveyar/', '/about/', '/resume/', '/contact/', '/does-not-exist/']
-ROUTES = set(PAGES[:-1]) | {'/resume.pdf'}
+# /lab/admin/ is a real route (the admin demo, built into dist/lab/admin/ by `npm run build`), linked from
+# the GozarX case study and its Work card. It is not in PAGES: every check here assumes the portfolio
+# shell (.bar, the tab bar), which the demo does not have; scripts/qa/check_admin_demo.py audits it.
+ROUTES = set(PAGES[:-1]) | {'/resume.pdf', '/lab/admin/'}
 WIDTHS = [1440, 1024, 768, 721, 720, 390, 320]
 JS = r"""() => {
   const out = [], vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && parseFloat(s.opacity) > .05; };
@@ -42,7 +45,7 @@ JS = r"""() => {
   const ids = [...document.querySelectorAll('[id]')].map(e => e.id); ids.filter((v, i) => ids.indexOf(v) !== i).forEach(v => out.push(['dup-id', v]));
   let last = 0; [...document.querySelectorAll('h1, h2, h3, h4')].filter(vis).forEach(h => { const l = +h.tagName[1]; if (last && l > last + 1) out.push(['heading-skip', h.tagName + ' "' + h.textContent.trim().slice(0, 20) + '"']); last = l; });
   if (document.querySelectorAll('h1').length !== 1) out.push(['h1-count', String(document.querySelectorAll('h1').length)]);
-  const links = [...document.querySelectorAll('a[href^="/"]')].map(a => a.getAttribute('href').split('#')[0]);
+  const links = [...document.querySelectorAll('a[href^="/"]')].map(a => a.getAttribute('href').split('#')[0].split('?')[0]);  // a query (the demo's ?profile=vpn) names a state of the page, not another page
   // 4. touch targets (phones only)
   if (W <= 720) document.querySelectorAll('a, button, [role=switch], summary').forEach(e => { if (!vis(e) || e.closest('.prose, .vh, .skip')) return; const r = e.getBoundingClientRect(); if (r.width < 44 || r.height < 44) out.push(['target', (e.textContent.trim() || e.getAttribute('aria-label') || e.className).slice(0, 22) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height)]); });
   return { out, links, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, cls: window.__cls || 0 };

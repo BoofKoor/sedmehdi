@@ -9,6 +9,9 @@ def expected():
     exp = {}
     for p in glob.glob(DIST + '/**/*.html', recursive=True):
         rel = os.path.relpath(p, DIST).replace(os.sep, '/')
+        # dist/lab/ holds the live demos (the admin panel at /lab/admin/): apps with their own HTML, which
+        # scripts/single-file.mjs leaves out on purpose. Its checks live in check_admin_demo.py.
+        if rel.startswith('lab/'): continue
         route = '404' if rel == '404.html' else '/' + re.sub(r'index\.html$', '', rel)
         s = open(p, encoding='utf-8').read()
         h1 = re.sub(r'<[^>]+>', '', re.search(r'<h1[^>]*>([\s\S]*?)</h1>', s).group(1)).strip()
