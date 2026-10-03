@@ -108,26 +108,26 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     };
   }, [base, p.health, seed]);
 
-  const [state, setState] = useState<LiveState>(initial);
-  const tick = useRef(0);
-
-  // A new business (or a reset) starts from its own figures.
-  useEffect(() => {
-    setState(initial);
-    tick.current = 0;
-  }, [initial]);
+  // The readings belong to one business (and one reset): keyed, so the render that switches business
+  // already shows the new one's figures instead of the old readings under the new service names.
+  const key = `${p.id}|${empty}|${epoch}`;
+  const [state, setState] = useState<{ key: string; live: LiveState }>(() => ({ key, live: initial }));
+  const current = state.key === key ? state.live : initial;
+  const tick = useRef({ key, n: 0 });
 
   const running = visible && !still;
 
   useEffect(() => {
     if (!running) return;
+    if (tick.current.key !== key) tick.current = { key, n: 0 };
     let id = 0;
     const schedule = () => {
       // Every three to five seconds: a fixed beat reads as a metronome, not as traffic.
-      const wait = 3000 + Math.round(unit(seed + 9, tick.current) * 2000);
+      const wait = 3000 + Math.round(unit(seed + 9, tick.current.n) * 2000);
       id = window.setTimeout(() => {
-        const k = ++tick.current;
-        setState((s) => {
+        const k = ++tick.current.n;
+        setState((prev) => {
+          const s = prev.key === key ? prev.live : initial;
           const readings = { ...s.readings };
           const history = { ...s.history };
           for (const def of p.health) {
@@ -141,13 +141,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
           history.online = [...s.history.online, online].slice(-HISTORY);
           const cpu = Math.round(Math.min(92, Math.max(12, s.resources.cpu + (unit(seed + 2, k) * 2 - 1) * 6)));
           return {
-            ...s,
-            status: "running",
-            online,
-            readings,
-            history,
-            resources: { ...s.resources, cpu },
-            updatedAt: new Date(),
+            key,
+            live: { ...s, status: "running", online, readings, history, resources: { ...s.resources, cpu }, updatedAt: new Date() },
           };
         });
         schedule();
@@ -155,9 +150,9 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     };
     schedule();
     return () => window.clearTimeout(id);
-  }, [running, p.health, base, seed, empty]);
+  }, [running, p.health, base, seed, empty, key, initial]);
 
   const status: LiveStatus = still ? "still" : visible ? "running" : "paused";
-  const value = useMemo(() => ({ ...state, status }), [state, status]);
+  const value = useMemo(() => ({ ...current, status }), [current, status]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

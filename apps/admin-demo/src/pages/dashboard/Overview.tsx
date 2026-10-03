@@ -1,19 +1,18 @@
 /**
- * The dashboard's overview: the KPI band, the trend, the "top" cards, and the side panel of rates,
- * live figures and service health. The GozarX panel's composition, driven by the business profile.
+ * The dashboard's overview: the KPI band, the trend and the "top" cards (the side panel of rates, live
+ * figures and service health belongs to the whole dashboard: SideBlocks). The GozarX panel's
+ * composition, driven by the business profile.
  *
  * Every windowed figure here comes from the days the chart draws (src/data/dashboard.ts), so a tile,
  * the chart's table view and the CSV cannot disagree.
  */
 import { clsx } from "clsx";
-import { ArrowDown, ArrowUp, Award, Clock, Layers, Radio, Sparkles, UserPlus, type LucideIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Award, Clock, Layers, Sparkles, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { ChartCard, LegendItem } from "@/components/charts/ChartCard";
 import { HeroSparkline } from "@/components/charts/HeroSparkline";
-import { RadarRates } from "@/components/charts/RadarRates";
 import { DEFAULT_HEIGHTS, TrendPanels, trendHeight } from "@/components/charts/TrendPanels";
-import { SidePanel } from "@/components/shell/chrome";
 import { Card } from "@/components/ui/Card";
 import { CountUp } from "@/components/ui/CountUp";
 import { EmptyState, ErrorState, Loading, Skeleton } from "@/components/ui/States";
@@ -21,12 +20,10 @@ import { dateOf } from "@/data/calendar";
 import type { DashboardData, KpiOut } from "@/data/dashboard";
 import type { DemoQuery } from "@/hooks/useDemoQuery";
 import { t, tl, type L } from "@/i18n";
-import { formatDate, formatHour, formatMs, formatNumber, formatPct, formatTime, formatWeekdayNarrow } from "@/lib/format";
+import { formatDate, formatHour, formatNumber, formatPct, formatWeekdayNarrow } from "@/lib/format";
 import { formatMetric } from "@/lib/metric";
-import type { BusinessProfile, HealthDef } from "@/profiles";
-import { Link } from "@/router";
+import type { BusinessProfile } from "@/profiles";
 import { useAppState } from "@/state/AppState";
-import { isDegraded, useLive } from "@/state/Live";
 
 export function Overview({ q }: { q: DemoQuery<DashboardData> }) {
   const { profile: p } = useAppState();
@@ -43,9 +40,6 @@ export function Overview({ q }: { q: DemoQuery<DashboardData> }) {
           <Tops p={p} d={q.data} />
         </>
       )}
-      <SidePanel label={t("dash.side.panel")}>
-        <SideBlocks p={p} q={q} />
-      </SidePanel>
     </div>
   );
 }
@@ -115,7 +109,7 @@ function KpiBand({ p, d }: { p: BusinessProfile; d?: DashboardData }) {
       {p.kpis.slice(1).map((def, i) => {
         const k = d?.kpis[i];
         return (
-          <div key={def.id} className="flex min-h-[120px] min-w-0 flex-col rounded-card bg-surface p-4 shadow-card md:min-h-[139px]" data-kpi={def.id}>
+          <div key={def.id} className="flex min-h-[132px] min-w-0 flex-col rounded-card bg-surface p-4 shadow-card md:min-h-[139px]" data-kpi={def.id}>
             {k ? (
               <>
                 <div className="text-[2rem] font-bold leading-[1.1] tracking-[-0.025em] text-content">
@@ -249,154 +243,5 @@ function Tops({ p, d }: { p: BusinessProfile; d?: DashboardData }) {
         loading={!d}
       />
     </section>
-  );
-}
-
-// ------------------------------------------------------------------------------------- side panel
-
-function SideHead({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
-  return (
-    <h2 className="flex items-baseline gap-2 text-[0.95rem] font-bold text-content">
-      <span className="flex-1">{children}</span>
-      {aside && <span className="text-[11px] font-normal text-content-muted">{aside}</span>}
-    </h2>
-  );
-}
-
-function Gauge({ icon: Icon, label, value, outOf, outOfLabel, testId }: { icon: LucideIcon; label: string; value: number; outOf: number; outOfLabel: string; testId: string }) {
-  const r = 21;
-  const c = 2 * Math.PI * r;
-  const frac = outOf > 0 ? Math.min(1, value / outOf) : 0;
-  return (
-    <div className="flex items-center gap-3 rounded-[13px] bg-surface-raised px-[0.9rem] py-[0.8rem]" data-live={testId} data-value={value}>
-      <div className="min-w-0 flex-1 text-[0.8rem] leading-[1.4] text-content-muted">{label}</div>
-      <div className="relative grid h-[3.05rem] w-[3.05rem] shrink-0 place-items-center">
-        <svg viewBox="0 0 50 50" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
-          <circle cx="25" cy="25" r={r} fill="none" className="stroke-line" strokeWidth="4" />
-          <circle cx="25" cy="25" r={r} fill="none" style={{ stroke: "rgb(var(--chart-1))", transition: "stroke-dasharray .6s ease" }} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(c * frac).toFixed(2)} ${c.toFixed(2)}`} />
-        </svg>
-        <Icon className="relative h-[1.05rem] w-[1.05rem] text-brand-700" aria-hidden />
-      </div>
-      <div className="shrink-0 text-end">
-        <div className="text-[0.65rem] uppercase tracking-[0.06em] text-content-muted">
-          {outOfLabel} {formatNumber(outOf)}
-        </div>
-        <div className="text-[1.4rem] font-bold leading-tight tracking-[-0.02em] text-content">
-          <CountUp value={value} format={(n) => formatNumber(n)} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function healthReading(def: HealthDef, v: number): string {
-  switch (def.kind) {
-    case "latency":
-      return formatMs(v);
-    case "nodes":
-      return `${formatNumber(v)} / ${formatNumber(def.base)}`;
-    case "queue":
-      return formatNumber(v);
-    case "percent":
-      return formatPct(v);
-  }
-}
-
-export function HealthLine({ def, value, last }: { def: HealthDef; value: number; last?: boolean }) {
-  const bad = isDegraded(def, value);
-  return (
-    <div className={clsx("flex items-center gap-[0.55rem] py-[0.62rem] text-[0.8rem]", !last && "border-b border-line")} data-health={def.id} data-degraded={bad}>
-      <span className={clsx("h-2 w-2 shrink-0 rounded-full ring-[3px]", bad ? "bg-warning-500 ring-warning-500/20" : "bg-success-500 ring-success-500/20")} aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-content-muted">
-        {tl(def.name)}
-        <span className="sr-only">: {t(bad ? "health.slow" : "health.ok")}</span>
-      </span>
-      <b className="shrink-0 font-medium text-content" dir={def.kind === "nodes" ? "ltr" : undefined} style={{ unicodeBidi: "isolate" }}>
-        {healthReading(def, value)}
-      </b>
-    </div>
-  );
-}
-
-function LiveCaption() {
-  const live = useLive();
-  const text =
-    live.status === "running" ? t("dash.live.updated", { time: formatTime(live.updatedAt, true) }) : live.status === "paused" ? t("dash.live.paused") : t("dash.live.still");
-  return (
-    <p className="flex items-center gap-1.5 text-[11px] text-content-muted" data-testid="live-caption" data-live-status={live.status}>
-      <Radio className="h-3.5 w-3.5" aria-hidden />
-      {text}
-    </p>
-  );
-}
-
-function SideBlocks({ p, q }: { p: BusinessProfile; q: DemoQuery<DashboardData> }) {
-  const live = useLive();
-  const d = q.data;
-  const error = q.status === "error";
-  return (
-    <>
-      <div className="flex flex-col gap-3" data-side-block="rates">
-        <SideHead aside={d ? t("dash.side.ratesScope", { n: formatNumber(d.range) }) : undefined}>{t("dash.side.rates")}</SideHead>
-        {error ? (
-          <ErrorState compact onRetry={q.retry} />
-        ) : !d ? (
-          <Loading>
-            <Skeleton className="mx-auto aspect-[340/254] w-full max-w-[340px] rounded-full opacity-60" />
-          </Loading>
-        ) : d.empty ? (
-          <EmptyState className="py-6" />
-        ) : (
-          <>
-            <RadarRates axes={d.rates.map((r) => ({ label: tl(r.label), value: r.value, title: tl(r.full) }))} />
-            <ul className="sr-only">
-              {d.rates.map((r) => (
-                <li key={r.label.en}>
-                  {tl(r.full)}: {r.value == null ? "—" : formatPct(r.value)}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3" data-side-block="live">
-        <SideHead>{t("dash.side.live")}</SideHead>
-        {error ? (
-          <ErrorState compact onRetry={q.retry} />
-        ) : (
-          <>
-            <Gauge icon={Radio} label={tl(p.live.online.label)} value={live.online} outOf={Math.max(live.online, live.onlineOf)} outOfLabel={tl(p.live.online.ofLabel)} testId="online" />
-            <Gauge icon={UserPlus} label={tl(p.live.today.label)} value={live.today} outOf={Math.max(live.today, live.todayOf)} outOfLabel={tl(p.live.today.ofLabel)} testId="today" />
-            <div className="flex items-center gap-3 rounded-[13px] bg-surface-raised px-[0.9rem] py-[0.8rem]" data-live="lifetime">
-              <div className="min-w-0 flex-1">
-                <div className="text-[0.8rem] leading-[1.4] text-content-muted">{tl(p.live.lifetime.label)}</div>
-                <div className="text-[11px] text-content-muted">{tl(p.live.lifetime.sub)}</div>
-              </div>
-              <span className="shrink-0 text-[1.3rem] font-bold tracking-[-0.02em] text-content">{formatMetric(live.lifetime, p.live.lifetime.format, p.currency)}</span>
-            </div>
-            <LiveCaption />
-          </>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3" data-side-block="health">
-        <SideHead>{t("dash.side.health")}</SideHead>
-        {error ? (
-          <ErrorState compact onRetry={q.retry} />
-        ) : (
-          <div className="rounded-[13px] bg-surface-raised px-[0.9rem] py-1">
-            {p.health
-              .filter((h) => h.side)
-              .map((h, i, all) => (
-                <HealthLine key={h.id} def={h} value={live.readings[h.id]} last={i === all.length - 1} />
-              ))}
-          </div>
-        )}
-        <Link to="/health" className="inline-flex min-h-11 items-center gap-1.5 self-start px-1 text-xs font-medium text-brand-700 hover:underline md:min-h-8">
-          {t("dash.side.healthMore")}
-        </Link>
-      </div>
-    </>
   );
 }

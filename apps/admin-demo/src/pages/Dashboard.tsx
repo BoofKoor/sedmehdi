@@ -22,7 +22,10 @@ import { formatNumber, isoDate } from "@/lib/format";
 import type { DashTab } from "@/router";
 import { RANGES, useAppState } from "@/state/AppState";
 
+import { SidePanel } from "@/components/shell/chrome";
+
 import { Overview } from "./dashboard/Overview";
+import { SideBlocks } from "./dashboard/SideBlocks";
 
 const Growth = lazy(() => import("./dashboard/Growth"));
 const Retention = lazy(() => import("./dashboard/Retention"));
@@ -65,9 +68,9 @@ export function Dashboard({ tab }: { tab: DashTab }) {
             testId="range"
             options={RANGES.map((n) => ({ value: n, label: t("dash.range.days", { n: formatNumber(n) }), title: t("dash.range.full", { n: formatNumber(n) }) }))}
           />
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={q.status !== "ready"} data-testid="dash-csv">
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={q.status !== "ready"} data-testid="dash-csv" aria-label={t("dash.csv")} className="max-sm:w-11 max-sm:px-0">
             <Download className="h-4 w-4" aria-hidden />
-            <span>{t("dash.csv")}</span>
+            <span className="max-sm:sr-only">{t("dash.csv")}</span>
           </Button>
         </div>
       </div>
@@ -80,6 +83,9 @@ export function Dashboard({ tab }: { tab: DashTab }) {
           {tab === "behaviour" && <Behaviour q={q} />}
         </Suspense>
       )}
+      <SidePanel label={t("dash.side.panel")}>
+        <SideBlocks p={profile} q={q} />
+      </SidePanel>
     </div>
   );
 }

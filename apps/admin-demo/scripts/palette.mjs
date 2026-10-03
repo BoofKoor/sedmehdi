@@ -198,23 +198,23 @@ export function buildTheme(accent, mode) {
 export const SHARED = {
   light: {
     "success-500": "#1A9A5E",
-    "success-700": "#0F7347",
+    "success-700": "#0D6A41",
     "warning-500": "#B9781C",
-    "warning-700": "#7F4E12",
+    "warning-700": "#774811",
     "danger-500": "#E04848",
-    "danger-700": "#AE2E2E",
+    "danger-700": "#A42A2A",
     "info-500": "#2A8FB0",
-    "info-700": "#1C5E76",
+    "info-700": "#1A586F",
   },
   dark: {
     "success-500": "#2EC07A",
-    "success-700": "#5BE3A2",
+    "success-700": "#68E8AA",
     "warning-500": "#E39A3B",
-    "warning-700": "#F2BE6E",
+    "warning-700": "#F5C882",
     "danger-500": "#F06262",
-    "danger-700": "#FFA3A3",
+    "danger-700": "#FFB3B3",
     "info-500": "#45B4D8",
-    "info-700": "#8AD3EB",
+    "info-700": "#98DBF0",
   },
 };
 

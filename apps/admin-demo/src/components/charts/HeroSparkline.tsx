@@ -76,7 +76,7 @@ export function HeroSparkline({
         <g>
           <rect x={pillX} y={pillY} width={pillW} height="21" rx="7" fill="#fff" />
           {/* A signed figure keeps its sign in front in both languages. */}
-          <text x={pillX + pillW / 2} y={pillY + 14.5} textAnchor="middle" fontSize="11.5" fontWeight="700" style={{ direction: "ltr", unicodeBidi: "isolate" }} className="fill-hero-ink">
+          <text x={pillX + pillW / 2} y={pillY + 14.5} textAnchor="middle" fontSize="11.5" fontWeight="700" style={{ direction: "ltr", unicodeBidi: "isolate" }} className="fill-hero-ink" data-contrast-bg="#ffffff">
             {delta}
           </text>
         </g>

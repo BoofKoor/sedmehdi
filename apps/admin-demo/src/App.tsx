@@ -24,6 +24,7 @@ import { Dashboard } from "@/pages/Dashboard";
 import { PROFILES, type ProfileId } from "@/profiles";
 import { currentPath, navigate, parseRoute, pathOf, replacePath, useRoute, type Route } from "@/router";
 import { AppStateProvider, RANGES, useAppState, type DataMode } from "@/state/AppState";
+import { clearEdits } from "@/state/edits";
 import { LiveProvider } from "@/state/Live";
 
 const Records = lazy(() => import("@/pages/Records"));
@@ -85,6 +86,7 @@ function Shell() {
 
   const reset = useCallback(() => {
     app.reset();
+    clearEdits();
     navigate("/");
     toast(t("demo.resetDone"));
   }, [app, toast]);
@@ -196,7 +198,7 @@ function Shell() {
           className={clsx(
             "scrollbar-thin w-[19.5rem] shrink-0 overflow-y-auto rounded-[14px] bg-surface px-4 pb-5 pt-4 shadow-raised",
             SIDE_STACK,
-            chrome?.sideFilled ? "hidden xl:flex" : "hidden",
+            route.page === "dashboard" ? "hidden xl:flex" : "hidden",
           )}
         />
       </div>

@@ -127,13 +127,13 @@ export default function Health() {
                     <div
                       role="img"
                       aria-label={t("health.uptimeAria", { name: tl(def.name), pct: formatPct(total, 2), n: formatNumber(issues) })}
-                      className="flex h-6 gap-[2px]"
+                      className="flex h-6 gap-px sm:gap-[2px]"
                     >
                       {days.map((d) => (
                         <span
                           key={d.day}
                           title={t("health.uptimeDay", { date: formatDate(dateOf(d.day)), pct: `${formatPct(d.pct, 2)} · ${t(LEVEL[d.level].key)}` })}
-                          className={clsx("min-w-[2px] flex-1 rounded-[2px]", LEVEL[d.level].cls, d.level === "ok" && "opacity-70")}
+                          className={clsx("min-w-0 flex-1 rounded-[1px] sm:rounded-[2px]", LEVEL[d.level].cls, d.level === "ok" && "opacity-70")}
                         />
                       ))}
                     </div>

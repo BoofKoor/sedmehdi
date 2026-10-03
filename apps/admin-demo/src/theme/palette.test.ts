@@ -39,7 +39,8 @@ function pairs(t: Theme): [string, string, string, number][] {
   }
   for (const s of ["success", "warning", "danger", "info"]) {
     p.push([`${s} ink on the card`, t[`${s}-700`], t.surface, 4.5]);
-    p.push([`${s} ink on its tinted badge`, t[`${s}-700`], over(t[`${s}-500`], 0.15, t.surface), 4.5]);
+    // A badge sits on a card or on a raised plate inside one (the health page's incidents).
+    for (const g of ["surface", "surface-raised"]) p.push([`${s} ink on its tinted badge on ${g}`, t[`${s}-700`], over(t[`${s}-500`], 0.15, t[g]), 4.5]);
     p.push([`${s} dot on the card`, t[`${s}-500`], t.surface, 3]);
   }
   return p;
