@@ -6,6 +6,7 @@ import type { BusinessProfile } from "./types";
 
 const L = (en: string, fa: string) => ({ en, fa });
 
+/** The catalogue, most studied first: the Courses table lists each once, the weights say how popular. */
 const COURSES = [
   { name: L("Product Design Basics", "مبانی طراحی محصول"), weight: 22 },
   { name: L("Data Analysis with Python", "تحلیل داده با پایتون"), weight: 20 },
@@ -14,7 +15,30 @@ const COURSES = [
   { name: L("Photography Fundamentals", "مبانی عکاسی"), weight: 11 },
   { name: L("Accounting for Founders", "حسابداری برای بنیان‌گذاران"), weight: 9 },
   { name: L("Web Development Bootcamp", "دورهٔ فشردهٔ توسعهٔ وب"), weight: 9 },
+  { name: L("UX Writing", "نوشتن برای رابط کاربری"), weight: 8 },
+  { name: L("Digital Marketing Essentials", "اصول بازاریابی دیجیتال"), weight: 8 },
+  { name: L("Excel for Everyday Work", "اکسل برای کارهای روزمره"), weight: 7 },
+  { name: L("Public Speaking", "سخنرانی در جمع"), weight: 7 },
+  { name: L("Intro to Machine Learning", "آشنایی با یادگیری ماشین"), weight: 7 },
+  { name: L("Mobile App Design", "طراحی اپلیکیشن موبایل"), weight: 6 },
+  { name: L("SQL for Analysts", "SQL برای تحلیلگران"), weight: 6 },
+  { name: L("Watercolour Painting", "نقاشی آبرنگ"), weight: 5 },
+  { name: L("Creative Writing", "نویسندگی خلاق"), weight: 5 },
+  { name: L("Video Editing", "تدوین ویدیو"), weight: 5 },
+  { name: L("German A1", "آلمانی A1"), weight: 5 },
+  { name: L("Music Theory", "تئوری موسیقی"), weight: 4 },
+  { name: L("Interior Design Basics", "مبانی طراحی داخلی"), weight: 4 },
+  { name: L("Project Management", "مدیریت پروژه"), weight: 4 },
+  { name: L("Personal Finance", "مدیریت مالی شخصی"), weight: 4 },
+  { name: L("Copywriting", "کپی‌رایتینگ"), weight: 3 },
+  { name: L("Social Media Strategy", "استراتژی شبکه‌های اجتماعی"), weight: 3 },
+  { name: L("Illustration for Beginners", "تصویرسازی برای تازه‌کارها"), weight: 3 },
+  { name: L("Branding Workshop", "کارگاه برندسازی"), weight: 3 },
+  { name: L("Spoken Arabic A1", "مکالمهٔ عربی A1"), weight: 2 },
+  { name: L("Time Management", "مدیریت زمان"), weight: 2 },
 ];
+/** The most studied seven: the "top course" card and the "most studied" list. */
+const POPULAR = COURSES.slice(0, 7);
 
 const TEACHERS = [
   { name: L("Roya S.", "رویا س."), weight: 14 },
@@ -84,7 +108,7 @@ export const education: BusinessProfile = {
     { label: L("Attendance", "حضور در کلاس زنده"), full: L("Seats filled in live sessions", "صندلی‌های پرشده در جلسه‌های زنده"), base: 69, spread: 6 },
   ],
   tops: [
-    { label: L("Top course", "دورهٔ اول"), unit: L("lessons", "درس"), scope: "range", of: "primary", share: 0.55, items: COURSES },
+    { label: L("Top course", "دورهٔ اول"), unit: L("lessons", "درس"), scope: "range", of: "primary", share: 0.55, items: POPULAR },
     { label: L("Top teacher", "مدرس برتر"), unit: L("students", "دانشجو"), scope: "allTime", of: "secondary", share: 0.42, items: TEACHERS },
     { label: L("Top device", "دستگاه اول"), unit: L("lessons", "درس"), scope: "range", of: "primary", share: 1, items: DEVICES },
   ],
@@ -129,7 +153,7 @@ export const education: BusinessProfile = {
   behaviour: {
     heat: L("Lessons completed", "درس‌های کامل‌شده"),
     segments: { title: L("Lessons by device", "درس‌ها بر اساس دستگاه"), sub: L("Share of lessons in this range", "سهم از درس‌های این بازه"), items: DEVICES },
-    list: { title: L("Most studied courses", "پرمخاطب‌ترین دوره‌ها"), sub: L("Lessons completed in this range", "درس کامل‌شده در این بازه"), items: COURSES },
+    list: { title: L("Most studied courses", "پرمخاطب‌ترین دوره‌ها"), sub: L("Lessons completed in this range", "درس کامل‌شده در این بازه"), items: POPULAR },
   },
   entities: [
     {
@@ -143,6 +167,7 @@ export const education: BusinessProfile = {
       filter: { column: "course", label: L("Course", "دوره") },
       sort: { column: "last", dir: "desc" },
       trend: { label: L("Lessons per day", "درس در روز"), base: 2 },
+      span: { from: "enrolled", to: "last" },
       activity: [
         L("Completed lesson {n}", "درس {n} را تمام کرد"),
         L("Passed a quiz", "در یک آزمونک قبول شد"),
@@ -150,12 +175,34 @@ export const education: BusinessProfile = {
         L("Asked a question in the forum", "در انجمن سؤالی پرسید"),
       ],
       columns: [
-        { id: "student", label: L("Student", "دانشجو"), kind: "person", gen: (r) => g.person(r) },
+        { id: "student", label: L("Student", "دانشجو"), kind: "person", gen: (r, _row, c) => g.person(r, c.index) },
         { id: "course", label: L("Course", "دوره"), kind: "enum", gen: (r) => g.weighted(r, COURSES) },
-        { id: "progress", label: L("Progress", "پیشرفت"), kind: "progress", gen: (r) => g.pct(r, 4, 100, 0) },
-        { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r) => g.status(r, STUDENT_STATUS) },
-        { id: "last", label: L("Last lesson", "آخرین درس"), kind: "ago", gen: (r, _row, c) => g.ago(r, c.now, 21) },
-        { id: "enrolled", label: L("Enrolled", "ثبت‌نام"), kind: "ago", gen: (r, _row, c) => g.ago(r, c.now, 300), secondary: true },
+        // Completed is 100% and nothing else is; a paused or dropped student has not been back for a while;
+        // and the enrolment comes before the last lesson, by at least as long as the progress took.
+        { id: "progress", label: L("Progress", "پیشرفت"), kind: "progress", gen: (r) => (r.next() < 0.2 ? 100 : g.pct(r, 3, 97, 0)) },
+        {
+          id: "status",
+          label: L("Status", "وضعیت"),
+          kind: "status",
+          gen: (r, row) => (row.progress === 100 ? "completed" : g.statusAmong(r, STUDENT_STATUS, ["active", "paused", "dropped"])),
+        },
+        {
+          id: "last",
+          label: L("Last lesson", "آخرین درس"),
+          kind: "ago",
+          gen: (r, row, c) =>
+            row.status === "dropped" ? g.agoBetween(r, c.now, 30, 120) : row.status === "paused" ? g.agoBetween(r, c.now, 10, 45) : row.status === "completed" ? g.agoBetween(r, c.now, 0, 60) : g.agoBetween(r, c.now, 0, 6),
+        },
+        {
+          id: "enrolled",
+          label: L("Enrolled", "ثبت‌نام"),
+          kind: "ago",
+          gen: (r, row, c) => {
+            const since = (c.now.getTime() - (row.last as number)) / 86_400_000;
+            return g.agoBetween(r, c.now, since + 1 + (row.progress as number) * 0.9, since + 30 + (row.progress as number) * 2.4);
+          },
+          secondary: true,
+        },
       ],
     },
     {
@@ -164,11 +211,12 @@ export const education: BusinessProfile = {
       label: L("Courses", "دوره‌ها"),
       things: L("courses", "دوره‌ها"),
       icon: "book",
-      count: 28,
+      count: COURSES.length,
       statuses: COURSE_STATUS,
       filter: { column: "teacher", label: L("Teacher", "مدرس") },
       sort: { column: "students", dir: "desc" },
-      trend: { label: L("Lessons completed per day", "درس کامل‌شده در روز"), base: 140 },
+      trend: { label: L("Lessons completed per day", "درس کامل‌شده در روز"), base: 12, per: "students" },
+      quiet: ["draft"],
       activity: [
         L("Published lesson {n}", "درس {n} منتشر شد"),
         L("Added a downloadable worksheet", "یک کاربرگ قابل دانلود اضافه شد"),
@@ -178,10 +226,17 @@ export const education: BusinessProfile = {
       columns: [
         { id: "course", label: L("Course", "دوره"), kind: "enum", gen: (_r, _row, c) => COURSES[c.index % COURSES.length].name },
         { id: "teacher", label: L("Teacher", "مدرس"), kind: "enum", gen: (r) => g.weighted(r, TEACHERS) },
-        { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r) => g.status(r, COURSE_STATUS) },
-        { id: "students", label: L("Students", "دانشجویان"), kind: "number", gen: (r) => g.count(r, 640, 0.7, 30) },
-        { id: "completion", label: L("Completion", "تکمیل"), kind: "percent", gen: (r) => g.pct(r, 38, 81) },
-        { id: "rating", label: L("Rating", "امتیاز"), kind: "rating", gen: (r) => g.rating(r), secondary: true },
+        // The catalogue's last three are still drafts: no students, so no completion and no rating yet.
+        { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r, _row, c) => (c.index >= COURSES.length - 3 ? "draft" : g.statusAmong(r, COURSE_STATUS, ["open", "running"])) },
+        // In step with the catalogue's weights, so the most studied courses on the dashboard lead this table too.
+        {
+          id: "students",
+          label: L("Students", "دانشجویان"),
+          kind: "number",
+          gen: (r, row, c) => (row.status === "draft" ? 0 : g.count(r, COURSES[c.index % COURSES.length].weight * 58, 0.18, 20)),
+        },
+        { id: "completion", label: L("Completion", "تکمیل"), kind: "percent", gen: (r, row) => (row.status === "draft" ? null : g.pct(r, 38, 81)) },
+        { id: "rating", label: L("Rating", "امتیاز"), kind: "rating", gen: (r, row) => (row.status === "draft" ? null : g.rating(r)), secondary: true },
       ],
     },
   ],

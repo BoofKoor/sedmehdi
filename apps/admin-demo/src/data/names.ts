@@ -27,12 +27,19 @@ export interface PersonPick {
   initials: L;
 }
 
-export function personAt(a: number, b: number, n: number): PersonPick {
+/**
+ * `row`: the person IS the record (a user, a student), so the handle's number comes from the row and
+ * is different in every row: 37 is coprime with 997, so `row × 37 mod 997` never repeats below 997
+ * rows. Drawn at random it repeated (two students, one handle). Without it, a repeat is the same
+ * person again, as an order's customer is.
+ */
+export function personAt(a: number, b: number, n: number, row?: number): PersonPick {
   const [fe, ff] = FIRST[a % FIRST.length];
   const [ie, iff] = INITIAL[b % INITIAL.length];
+  const tag = row != null ? String((row * 37 + 11) % 997) : n % 7 === 0 ? "" : String(n % 97);
   return {
     name: { en: `${fe} ${ie}.`, fa: `${ff} ${iff}.` },
-    handle: `@${fe.toLowerCase()}.${ie.toLowerCase()}${n % 7 === 0 ? "" : n % 97}`,
+    handle: `@${fe.toLowerCase()}.${ie.toLowerCase()}${tag}`,
     initials: { en: `${fe[0]}${ie}`, fa: ff[0] },
   };
 }
@@ -40,13 +47,21 @@ export function personAt(a: number, b: number, n: number): PersonPick {
 export const FIRST_COUNT = FIRST.length;
 export const INITIAL_COUNT = INITIAL.length;
 
-/** Invented companies. Names stay Latin in Persian too, as brand names usually do. */
+/**
+ * Invented companies. Names stay Latin in Persian too, as brand names usually do. Sixty, so a table of
+ * accounts can give every row its own (`companyAt`) instead of repeating a short list.
+ */
 export const COMPANIES = [
-  "Alder & Finch", "Bluefin Labs", "Cobalt Works", "Driftwood Studio", "Ember Analytics", "Fieldnote Co",
+  "Alder & Finch", "Bluefin Swim School", "Cobalt Works", "Driftwood Studio", "Ember Analytics", "Fieldnote Co",
   "Granite Clinics", "Harbor Kitchen", "Indigo Freight", "Juniper Legal", "Kestrel Media", "Lumen Robotics",
   "Marlow Dental", "Northbeam Energy", "Orchard Logistics", "Pine & Pixel", "Quarry Games", "Riverstone Realty",
   "Saffron Foods", "Tidewater Care", "Umber Architects", "Vellum Press", "Willow Fitness", "Yarrow Bakery",
   "Zephyr Travel", "Brightwater Farms", "Copperleaf Retail", "Dunmore Consulting", "Evergrove Schools", "Foxglove Events",
+  "Amberline Tea", "Birchwood Clinics", "Calder Print Co", "Deepwell Water", "Eastgate Motors", "Fernhill Nursery",
+  "Glasshouse Studio", "Hollowbrook Inn", "Ironside Fitness", "Jasper Lane Books", "Keelson Marine", "Larkspur Florals",
+  "Meadowlark Dairy", "Nettlefield Farms", "Oakhurst Dental", "Peregrine Tutors", "Quillon Legal", "Redfern Couriers",
+  "Seabright Hotels", "Thornbury Wines", "Underhill Coffee", "Valemont Pharmacy", "Westbrook Tiles", "Yellowpine Cabins",
+  "Zinnia Skincare", "Ashgrove Accounting", "Bramble Kids", "Clearbrook Tutoring", "Dovetail Joinery", "Elmstead Vets",
 ];
 
 const pair = (en: string, fa: string): L => ({ en, fa });

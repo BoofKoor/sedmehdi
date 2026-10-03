@@ -177,6 +177,8 @@ export const UI = {
   "record.saved": { en: "Saved in this tab only: the demo resets when you reload.", fa: "فقط در همین تب ذخیره شد؛ با بارگذاری دوباره بازنشانی می‌شود." },
   "record.trend": { en: "Last 30 days", fa: "۳۰ روز گذشته" },
   "record.activity": { en: "Recent activity", fa: "فعالیت اخیر" },
+  "record.history": { en: "History", fa: "سابقه" },
+  "record.noActivity": { en: "No activity in the last 30 days.", fa: "در ۳۰ روز گذشته فعالیتی نبوده است." },
   "record.details": { en: "Details", fa: "جزئیات" },
 
   // health

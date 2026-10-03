@@ -143,7 +143,9 @@ export const vpn: BusinessProfile = {
       statuses: STATUSES_USERS,
       filter: { column: "location", label: L("Location", "لوکیشن") },
       sort: { column: "seen", dir: "desc" },
-      trend: { label: L("Configs per day", "کانفیگ در روز"), base: 1.2 },
+      trend: { label: L("Configs per day", "کانفیگ در روز"), base: 1.2, total: "configs" },
+      span: { to: "seen" },
+      quiet: ["blocked"],
       activity: [
         L("Took a config in {n} seconds", "در {n} ثانیه کانفیگ گرفت"),
         L("Switched location", "لوکیشن را عوض کرد"),
@@ -151,12 +153,18 @@ export const vpn: BusinessProfile = {
         L("Renewed the daily config", "کانفیگ روزانه را تمدید کرد"),
       ],
       columns: [
-        { id: "user", label: L("User", "کاربر"), kind: "person", gen: (r) => g.person(r) },
+        { id: "user", label: L("User", "کاربر"), kind: "person", gen: (r, _row, c) => g.person(r, c.index) },
         { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r) => g.status(r, STATUSES_USERS) },
         { id: "location", label: L("Location", "لوکیشن"), kind: "enum", gen: (r) => r.pick(SERVER_CITIES.slice(0, 8)).name },
         { id: "platform", label: L("Platform", "پلتفرم"), kind: "enum", gen: (r) => g.weighted(r, PLATFORMS), secondary: true },
         { id: "configs", label: L("Configs", "کانفیگ‌ها"), kind: "number", gen: (r) => g.count(r, 14, 0.9, 1) },
-        { id: "seen", label: L("Last seen", "آخرین بازدید"), kind: "ago", gen: (r, _row, c) => g.ago(r, c.now, 30) },
+        // Idle means not seen for over a week; active, within the last few days.
+        {
+          id: "seen",
+          label: L("Last seen", "آخرین بازدید"),
+          kind: "ago",
+          gen: (r, row, c) => (row.status === "idle" ? g.agoBetween(r, c.now, 8, 60) : row.status === "active" ? g.agoBetween(r, c.now, 0, 3) : g.agoBetween(r, c.now, 1, 45)),
+        },
       ],
     },
     {
@@ -180,9 +188,16 @@ export const vpn: BusinessProfile = {
         { id: "server", label: L("Server", "سرور"), kind: "code", gen: (_r, _row, c) => `${SERVER_CITIES[c.index % SERVER_CITIES.length].code}-${Math.floor(c.index / SERVER_CITIES.length) + 1}` },
         { id: "city", label: L("City", "شهر"), kind: "enum", gen: (_r, _row, c) => SERVER_CITIES[c.index % SERVER_CITIES.length].name },
         { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r) => g.status(r, STATUSES_SERVERS) },
-        { id: "load", label: L("Load", "بار"), kind: "progress", gen: (r) => g.pct(r, 18, 92, 0) },
-        { id: "online", label: L("Users online", "کاربران آنلاین"), kind: "number", gen: (r) => g.count(r, 120, 0.5, 4) },
-        { id: "latency", label: L("Latency", "تأخیر"), kind: "ms", gen: (r) => Math.round(r.lognormal(48, 0.35)), secondary: true },
+        // A server in maintenance carries nothing; a degraded one is loaded and slow.
+        { id: "load", label: L("Load", "بار"), kind: "progress", gen: (r, row) => (row.status === "maintenance" ? 0 : row.status === "degraded" ? g.pct(r, 80, 98, 0) : g.pct(r, 18, 86, 0)) },
+        { id: "online", label: L("Users online", "کاربران آنلاین"), kind: "number", gen: (r, row) => (row.status === "maintenance" ? 0 : g.count(r, 2.2 * (row.load as number), 0.25, 4)) },
+        {
+          id: "latency",
+          label: L("Latency", "تأخیر"),
+          kind: "ms",
+          gen: (r, row) => (row.status === "maintenance" ? null : Math.round(r.lognormal(row.status === "degraded" ? 170 : 48, 0.3))),
+          secondary: true,
+        },
       ],
     },
   ],

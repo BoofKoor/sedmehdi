@@ -3,7 +3,7 @@ import { g } from "@/data/gen";
 import { REGIONS } from "@/data/names";
 
 import { BRANDS } from "./brands";
-import type { BusinessProfile } from "./types";
+import type { BusinessProfile, GenContext } from "./types";
 
 const L = (en: string, fa: string) => ({ en, fa });
 
@@ -27,6 +27,14 @@ const INVOICE_STATUS = [
   { id: "overdue", label: L("Overdue", "سررسید گذشته"), tone: "danger" as const, weight: 7 },
   { id: "refunded", label: L("Refunded", "بازپرداخت‌شده"), tone: "neutral" as const, weight: 5 },
 ];
+
+// An invoice's story, step by step (`story` on the invoices table).
+const SENT = L("Invoice sent to the billing contact", "صورت‌حساب برای مسئول پرداخت ارسال شد");
+const PDF = L("Invoice PDF downloaded", "PDF صورت‌حساب دانلود شد");
+const PAID = L("Paid by card", "با کارت پرداخت شد");
+
+/** When invoice row `index` was issued: one every ~9 hours, newest first. */
+const issuedAt = (c: GenContext) => c.now.getTime() - c.index * 0.37 * 86_400_000 - 3_600_000;
 
 const INTEGRATIONS = [
   { name: L("Calendar sync", "همگام‌سازی تقویم"), weight: 31 },
@@ -131,11 +139,14 @@ export const saas: BusinessProfile = {
       label: L("Accounts", "حساب‌ها"),
       things: L("accounts", "حساب‌ها"),
       icon: "building",
-      count: 220,
+      // One row per company in the pool: an account list that repeats a name reads as made up.
+      count: 60,
       statuses: ACCOUNT_STATUS,
       filter: { column: "plan", label: L("Plan", "پلن") },
       sort: { column: "mrr", dir: "desc" },
-      trend: { label: L("Active seats per day", "صندلی فعال در روز"), base: 9 },
+      trend: { label: L("Active seats per day", "صندلی فعال در روز"), base: 9, cap: "seats" },
+      span: { from: "created" },
+      quiet: ["churned"],
       activity: [
         L("Added {n} seats", "{n} صندلی اضافه کرد"),
         L("Connected a new integration", "یک یکپارچه‌سازی جدید وصل کرد"),
@@ -143,7 +154,7 @@ export const saas: BusinessProfile = {
         L("Changed the billing email", "ایمیل صورت‌حساب را عوض کرد"),
       ],
       columns: [
-        { id: "account", label: L("Account", "حساب"), kind: "text", gen: (r) => g.company(r) },
+        { id: "account", label: L("Account", "حساب"), kind: "text", gen: (_r, _row, c) => g.companyAt(c.index) },
         { id: "plan", label: L("Plan", "پلن"), kind: "enum", gen: (r) => g.weighted(r, PLANS) },
         { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r) => g.status(r, ACCOUNT_STATUS) },
         { id: "seats", label: L("Seats", "صندلی‌ها"), kind: "number", gen: (r) => g.count(r, 11, 0.8, 1) },
@@ -152,12 +163,15 @@ export const saas: BusinessProfile = {
           label: L("MRR", "درآمد ماهانه"),
           kind: "money",
           digits: 0,
+          // A trial and a churned account bring in nothing.
           gen: (_r, row) => {
+            if (row.status === "trial" || row.status === "churned") return 0;
             const plan = row.plan as { en: string };
             return (PRICE[plan.en] ?? 12) * (row.seats as number);
           },
         },
-        { id: "created", label: L("Created", "ایجاد"), kind: "ago", gen: (r, _row, c) => g.ago(r, c.now, 600), secondary: true },
+        // A trial is at most two weeks old; anything else is older than one.
+        { id: "created", label: L("Created", "ایجاد"), kind: "ago", gen: (r, row, c) => (row.status === "trial" ? g.agoBetween(r, c.now, 0, 14) : g.agoBetween(r, c.now, 20, 600)), secondary: true },
       ],
     },
     {
@@ -170,19 +184,25 @@ export const saas: BusinessProfile = {
       statuses: INVOICE_STATUS,
       filter: { column: "status", label: L("Status", "وضعیت") },
       sort: { column: "issued", dir: "desc" },
-      trend: { label: L("Payments per day", "پرداخت در روز"), base: 2 },
-      activity: [
-        L("Payment attempt {n} succeeded", "تلاش پرداخت شمارهٔ {n} موفق شد"),
-        L("Reminder sent to the billing contact", "یادآوری برای مسئول صورت‌حساب ارسال شد"),
-        L("Invoice PDF downloaded", "PDF صورت‌حساب دانلود شد"),
-        L("Tax ID added", "شناسهٔ مالیاتی اضافه شد"),
-      ],
+      span: { from: "issued" },
+      story: {
+        open: [SENT, PDF],
+        paid: [SENT, PDF, PAID],
+        overdue: [SENT, L("Payment attempt failed", "تلاش پرداخت ناموفق بود"), L("Reminder sent to the billing contact", "یادآوری برای مسئول صورت‌حساب ارسال شد")],
+        refunded: [SENT, PAID, L("Refund issued", "مبلغ بازپرداخت شد")],
+      },
       columns: [
         { id: "invoice", label: L("Invoice", "صورت‌حساب"), kind: "code", gen: (_r, _row, c) => g.code("INV", 20460, c.index, 1) },
         { id: "account", label: L("Account", "حساب"), kind: "text", gen: (r) => g.company(r) },
         { id: "amount", label: L("Amount", "مبلغ"), kind: "money", gen: (r) => g.money(r, 260, 0.8) },
-        { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r) => g.status(r, INVOICE_STATUS) },
-        { id: "issued", label: L("Issued", "صدور"), kind: "ago", gen: (_r, _row, c) => c.now.getTime() - c.index * 0.37 * 86_400_000 - 3_600_000 },
+        // Overdue (or refunded) only once the due date has passed; before it, paid or still open.
+        {
+          id: "status",
+          label: L("Status", "وضعیت"),
+          kind: "status",
+          gen: (r, _row, c) => g.statusAmong(r, INVOICE_STATUS, issuedAt(c) + 14 * 86_400_000 < c.now.getTime() ? ["paid", "overdue", "refunded"] : ["paid", "open"]),
+        },
+        { id: "issued", label: L("Issued", "صدور"), kind: "ago", gen: (_r, _row, c) => issuedAt(c) },
         { id: "due", label: L("Due", "سررسید"), kind: "due", gen: (_r, row) => (row.issued as number) + 14 * 86_400_000, secondary: true },
       ],
     },

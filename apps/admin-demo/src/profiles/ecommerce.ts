@@ -3,7 +3,7 @@ import { g } from "@/data/gen";
 import { CUSTOMER_CITIES } from "@/data/names";
 
 import { BRANDS } from "./brands";
-import type { BusinessProfile } from "./types";
+import type { BusinessProfile, GenContext } from "./types";
 
 const L = (en: string, fa: string) => ({ en, fa });
 
@@ -31,6 +31,25 @@ const ORDER_STATUS = [
   { id: "delivered", label: L("Delivered", "تحویل‌شده"), tone: "success" as const, weight: 42 },
   { id: "refunded", label: L("Refunded", "مرجوع‌شده"), tone: "neutral" as const, weight: 4 },
 ];
+
+// An order's story, step by step (`story` on the orders table).
+const CAPTURED = L("Payment captured", "مبلغ برداشت شد");
+const PACKED = L("Packed, shipping label printed", "بسته‌بندی شد و برچسب ارسال چاپ شد");
+const COURIER = L("Handed to the courier", "به پیک تحویل داده شد");
+const TRACKED = L("Customer opened the tracking link", "مشتری لینک رهگیری را باز کرد");
+const DELIVERED = L("Delivered", "تحویل داده شد");
+
+/** When order row `index` was placed: one every ~16 minutes, newest first. */
+const placedAt = (c: GenContext) => c.now.getTime() - c.index * 0.26 * 3_600_000 - 600_000;
+
+/** The stages an order can be in at its age. */
+function orderStages(placed: number, now: Date): string[] {
+  const hours = (now.getTime() - placed) / 3_600_000;
+  if (hours < 3) return ["paid"];
+  if (hours < 12) return ["paid", "packed"];
+  if (hours < 30) return ["packed", "shipped"];
+  return ["shipped", "delivered", "refunded"];
+}
 
 const SEGMENT = [
   { id: "new", label: L("New", "جدید"), tone: "info" as const, weight: 38 },
@@ -138,21 +157,23 @@ export const ecommerce: BusinessProfile = {
       statuses: ORDER_STATUS,
       filter: { column: "category", label: L("Category", "دسته") },
       sort: { column: "placed", dir: "desc" },
-      trend: { label: L("Page views per day", "بازدید در روز"), base: 14 },
-      activity: [
-        L("Shipping label printed", "برچسب ارسال چاپ شد"),
-        L("Customer opened the tracking link", "مشتری لینک رهگیری را باز کرد"),
-        L("Gift note added", "یادداشت هدیه اضافه شد"),
-        L("Payment captured", "مبلغ برداشت شد"),
-      ],
+      span: { from: "placed" },
+      story: {
+        paid: [CAPTURED],
+        packed: [CAPTURED, PACKED],
+        shipped: [CAPTURED, PACKED, COURIER, TRACKED],
+        delivered: [CAPTURED, PACKED, COURIER, TRACKED, DELIVERED],
+        refunded: [CAPTURED, PACKED, COURIER, DELIVERED, L("Return requested", "درخواست مرجوعی ثبت شد"), L("Refund issued", "مبلغ بازپرداخت شد")],
+      },
       columns: [
         { id: "order", label: L("Order", "سفارش"), kind: "code", gen: (_r, _row, c) => g.code("ORD", 48213, c.index, 2) },
         { id: "customer", label: L("Customer", "مشتری"), kind: "person", gen: (r) => g.person(r) },
         { id: "category", label: L("Category", "دسته"), kind: "enum", gen: (r) => g.weighted(r, CATEGORIES), secondary: true },
         { id: "items", label: L("Items", "اقلام"), kind: "number", gen: (r) => g.count(r, 2, 0.6, 1) },
         { id: "total", label: L("Total", "مبلغ"), kind: "money", gen: (r, row) => Math.round(g.money(r, 34, 0.45) * (row.items as number) * 100) / 100 },
-        { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r) => g.status(r, ORDER_STATUS) },
-        { id: "placed", label: L("Placed", "ثبت"), kind: "ago", gen: (_r, _row, c) => c.now.getTime() - c.index * 0.26 * 3_600_000 - 600_000 },
+        // An order moves on with its age: paid, packed within the day, shipped, delivered from the second day.
+        { id: "status", label: L("Status", "وضعیت"), kind: "status", gen: (r, _row, c) => g.statusAmong(r, ORDER_STATUS, orderStages(placedAt(c), c.now)) },
+        { id: "placed", label: L("Placed", "ثبت"), kind: "ago", gen: (_r, _row, c) => placedAt(c) },
       ],
     },
     {
@@ -173,12 +194,19 @@ export const ecommerce: BusinessProfile = {
         L("Updated the delivery address", "نشانی تحویل را به‌روز کرد"),
       ],
       columns: [
-        { id: "customer", label: L("Customer", "مشتری"), kind: "person", gen: (r) => g.person(r) },
+        { id: "customer", label: L("Customer", "مشتری"), kind: "person", gen: (r, _row, c) => g.person(r, c.index) },
         { id: "city", label: L("City", "شهر"), kind: "enum", gen: (r) => g.pick(r, CUSTOMER_CITIES) },
         { id: "status", label: L("Segment", "بخش"), kind: "status", gen: (r) => g.status(r, SEGMENT) },
-        { id: "orders", label: L("Orders", "سفارش‌ها"), kind: "number", gen: (r) => g.count(r, 3, 0.8, 1) },
+        // The segment is what the orders say: new has one, returning two to seven, VIP eight or more.
+        {
+          id: "orders",
+          label: L("Orders", "سفارش‌ها"),
+          kind: "number",
+          gen: (r, row) => (row.status === "new" ? 1 : row.status === "vip" ? g.count(r, 12, 0.3, 8) : Math.min(7, g.count(r, 3, 0.45, 2))),
+        },
         { id: "spend", label: L("Lifetime value", "ارزش کل"), kind: "money", gen: (r, row) => Math.round(g.money(r, 70, 0.4) * (row.orders as number) * 100) / 100 },
-        { id: "last", label: L("Last order", "آخرین سفارش"), kind: "ago", gen: (r, _row, c) => g.ago(r, c.now, 120), secondary: true },
+        // A new customer's one order is recent.
+        { id: "last", label: L("Last order", "آخرین سفارش"), kind: "ago", gen: (r, row, c) => (row.status === "new" ? g.agoBetween(r, c.now, 0, 21) : g.agoBetween(r, c.now, 0, 120)), secondary: true },
       ],
     },
   ],

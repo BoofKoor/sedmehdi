@@ -23,6 +23,13 @@ const PAPERS = [
   { name: L("Linen 300 g", "کتان ۳۰۰ گرم"), weight: 18 },
 ];
 
+// A job's story, step by step (`story` on the jobs table).
+const ARTWORK = L("Artwork uploaded", "طرح بارگذاری شد");
+const PROOF = L("Proof sent for approval", "نمونه برای تأیید ارسال شد");
+const APPROVED = L("Customer approved the proof", "مشتری نمونه را تأیید کرد");
+const PRINTING = L("Printing started", "چاپ شروع شد");
+const PACKED = L("Cut and packed {n} boxes", "{n} بسته برش و بسته‌بندی شد");
+
 const STAGE = [
   { id: "proof", label: L("Proof", "نمونه"), tone: "info" as const, weight: 16 },
   { id: "printing", label: L("Printing", "در حال چاپ"), tone: "brand" as const, weight: 22 },
@@ -132,13 +139,12 @@ export const print: BusinessProfile = {
       statuses: STAGE,
       filter: { column: "product", label: L("Product", "محصول") },
       sort: { column: "due", dir: "asc" },
-      trend: { label: L("Sheets printed per day", "برگ چاپ‌شده در روز"), base: 90 },
-      activity: [
-        L("Proof sent for approval", "نمونه برای تأیید ارسال شد"),
-        L("Customer approved the proof", "مشتری نمونه را تأیید کرد"),
-        L("Cut and packed {n} boxes", "{n} بسته برش و بسته‌بندی شد"),
-        L("Tracking number created", "شمارهٔ رهگیری ساخته شد"),
-      ],
+      story: {
+        proof: [ARTWORK, PROOF],
+        printing: [ARTWORK, PROOF, APPROVED, PRINTING],
+        finishing: [ARTWORK, PROOF, APPROVED, PRINTING, PACKED],
+        posted: [ARTWORK, PROOF, APPROVED, PRINTING, PACKED, L("Posted, tracking number created", "پست شد و شمارهٔ رهگیری ساخته شد")],
+      },
       columns: [
         { id: "job", label: L("Job", "سفارش"), kind: "code", gen: (_r, _row, c) => g.code("JOB", 7720, c.index, 1) },
         { id: "customer", label: L("Customer", "مشتری"), kind: "person", gen: (r) => g.person(r) },
@@ -158,7 +164,8 @@ export const print: BusinessProfile = {
       statuses: CUSTOMER_TYPE,
       filter: { column: "city", label: L("City", "شهر") },
       sort: { column: "spend", dir: "desc" },
-      trend: { label: L("Jobs per day", "سفارش در روز"), base: 1 },
+      trend: { label: L("Jobs per day", "سفارش در روز"), base: 1, total: "jobs" },
+      span: { to: "last" },
       activity: [
         L("Uploaded {n} new designs", "{n} طرح تازه بارگذاری کرد"),
         L("Saved a reorder template", "یک الگوی سفارش دوباره ذخیره کرد"),
@@ -166,7 +173,7 @@ export const print: BusinessProfile = {
         L("Rated the last job five stars", "به سفارش قبلی پنج ستاره داد"),
       ],
       columns: [
-        { id: "customer", label: L("Customer", "مشتری"), kind: "person", gen: (r) => g.person(r) },
+        { id: "customer", label: L("Customer", "مشتری"), kind: "person", gen: (r, _row, c) => g.person(r, c.index) },
         { id: "city", label: L("City", "شهر"), kind: "enum", gen: (r) => g.pick(r, CUSTOMER_CITIES) },
         { id: "status", label: L("Type", "نوع"), kind: "status", gen: (r) => g.status(r, CUSTOMER_TYPE) },
         { id: "jobs", label: L("Jobs", "سفارش‌ها"), kind: "number", gen: (r) => g.count(r, 3, 0.9, 1) },

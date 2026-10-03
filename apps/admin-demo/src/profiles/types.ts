@@ -178,10 +178,28 @@ export interface EntityDef {
   /** A select filter over an enum column. */
   filter?: { column: string; label: L };
   sort: { column: string; dir: "asc" | "desc" };
-  /** The record dialog's 30-day trend: what is counted per day. */
-  trend: { label: L; base: number };
-  /** Lines for the record dialog's activity list; {n} is filled with a small count. */
-  activity: L[];
+  /**
+   * The record dialog's 30-day trend: what is counted per day. It prints a 30-day total beside the
+   * record's own columns, so it must agree with them: `total` names a lifetime count it may not
+   * exceed (a user's configs), `cap` a ceiling no day may pass (an account's seats), `per` a column
+   * the daily level scales with (`base` per 100 of it: a course's students). Left out for one-off
+   * records, which have a `story` instead.
+   */
+  trend?: { label: L; base: number; total?: string; cap?: string; per?: string };
+  /** Lines for the record dialog's activity list (ongoing records); {n} is filled with a small count. */
+  activity?: L[];
+  /**
+   * One-off records (an order, an invoice, a print job): the events up to each status, oldest first.
+   * A paid order has been paid and nothing more; a posted job has its whole story.
+   */
+  story?: Record<string, L[]>;
+  /**
+   * `ago` columns bounding the record's life, which its trend and activity stay inside: when it
+   * began (`from`: created, enrolled, placed) and when it was last active (`to`: last seen).
+   */
+  span?: { from?: string; to?: string };
+  /** Statuses with no activity at all: a blocked user, a churned account, a course still in draft. */
+  quiet?: string[];
 }
 
 export type IconName =

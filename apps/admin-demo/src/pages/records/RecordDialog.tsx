@@ -24,7 +24,7 @@ export function RecordDialog({ entity: e, row, status, now, onClose }: { entity:
   const activity = rowActivity(p, e, row, now);
   const name = recordName(e, row.cells, locale);
   const statusCol = e.columns.find((c) => c.kind === "status");
-  const sum = trend.reduce((a, b) => a + b.value, 0);
+  const sum = trend ? trend.reduce((a, b) => a + b.value, 0) : 0;
 
   const change = (next: string) => {
     setEdit(editKey(p.id, e.id, row.id), next);
@@ -72,22 +72,25 @@ export function RecordDialog({ entity: e, row, status, now, onClose }: { entity:
           </dl>
         </section>
 
-        <section aria-labelledby={`${selectId}-t`}>
-          <div className="mb-2 flex items-baseline justify-between gap-3">
-            <h3 id={`${selectId}-t`} className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-              {tl(e.trend.label)} · {t("record.trend")}
-            </h3>
-            <span className="text-sm font-semibold text-content">{formatNumber(sum)}</span>
-          </div>
-          <div className="rounded-xl bg-surface-raised px-3 pt-3">
-            <MiniTrend values={trend.map((x) => x.value)} ariaLabel={`${tl(e.trend.label)}, ${t("record.trend")}: ${formatNumber(sum)}`} />
-          </div>
-        </section>
+        {trend && e.trend && (
+          <section aria-labelledby={`${selectId}-t`}>
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <h3 id={`${selectId}-t`} className="text-xs font-semibold uppercase tracking-wide text-content-muted">
+                {tl(e.trend.label)} · {t("record.trend")}
+              </h3>
+              <span className="text-sm font-semibold text-content">{formatNumber(sum)}</span>
+            </div>
+            <div className="rounded-xl bg-surface-raised px-3 pt-3">
+              <MiniTrend values={trend.map((x) => x.value)} ariaLabel={`${tl(e.trend.label)}, ${t("record.trend")}: ${formatNumber(sum)}`} />
+            </div>
+          </section>
+        )}
 
         <section aria-labelledby={`${selectId}-a`}>
           <h3 id={`${selectId}-a`} className="mb-2 text-xs font-semibold uppercase tracking-wide text-content-muted">
-            {t("record.activity")}
+            {t(e.story ? "record.history" : "record.activity")}
           </h3>
+          {activity.length === 0 && <p className="text-sm text-content-muted">{t("record.noActivity")}</p>}
           <ol className="space-y-2">
             {activity.map((a, i) => (
               <li key={i} className="flex items-baseline justify-between gap-3 text-sm">

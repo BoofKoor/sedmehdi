@@ -212,7 +212,51 @@ describe.each(PROFILE_LIST.map((p) => [p.id, p] as [string, BusinessProfile]))("
       const timeless = e.columns.filter((c) => c.kind !== "ago" && c.kind !== "due").map((c) => c.id);
       rows.forEach((r, i) => timeless.forEach((c) => expect(tomorrow[i].cells[c]).toEqual(r.cells[c])));
       expect(rowTrend(p, e, rows[3], NOW)).toEqual(rowTrend(p, e, rows[3], NOW));
-      expect(rowTrend(p, e, rows[3], NOW)).toHaveLength(30);
+      if (e.trend) expect(rowTrend(p, e, rows[3], NOW)).toHaveLength(30);
+      else expect(rowTrend(p, e, rows[3], NOW)).toBeNull();
+    }
+  });
+
+  it("keeps each record's dialog in step with the record: its trend, its activity, its story", () => {
+    const at = (row: { cells: Record<string, unknown> }, col?: string) => (col ? (row.cells[col] as number) : undefined);
+    for (const e of p.entities) {
+      for (const row of buildRows(p, e, NOW)) {
+        const status = String(row.cells.status);
+        const quiet = e.quiet?.includes(status) ?? false;
+        const from = at(row, e.span?.from);
+        const to = at(row, e.span?.to);
+        const trend = rowTrend(p, e, row, NOW);
+        if (trend && e.trend) {
+          const sum = trend.reduce((a, b) => a + b.value, 0);
+          if (quiet) expect(sum, `${e.id} ${row.id}: quiet`).toBe(0);
+          if (e.trend.total) expect(sum, `${e.id} ${row.id}: total`).toBeLessThanOrEqual(row.cells[e.trend.total] as number);
+          if (e.trend.cap) for (const d of trend) expect(d.value).toBeLessThanOrEqual(row.cells[e.trend.cap] as number);
+          if (to != null) for (const d of trend) if (d.day > dayNumber(new Date(to))) expect(d.value, `${e.id} ${row.id}: after last seen`).toBe(0);
+          if (from != null) for (const d of trend) if (d.day < dayNumber(new Date(from))) expect(d.value, `${e.id} ${row.id}: before it began`).toBe(0);
+        }
+        const events = rowActivity(p, e, row, NOW);
+        if (e.story) expect(events.map((ev) => ev.text)).toEqual([...(e.story[status] ?? [])].reverse());
+        else if (quiet) expect(events).toHaveLength(0);
+        for (let i = 0; i < events.length; i++) {
+          expect(events[i].at).toBeLessThanOrEqual(NOW.getTime());
+          if (from != null) expect(events[i].at, `${e.id} ${row.id}: event before it began`).toBeGreaterThanOrEqual(from);
+          if (to != null && !e.story) expect(events[i].at, `${e.id} ${row.id}: event after last seen`).toBeLessThanOrEqual(to);
+          if (i > 0) expect(events[i].at).toBeLessThan(events[i - 1].at);
+        }
+      }
+    }
+  });
+
+  it("names every record once: a list of accounts or courses never repeats one", () => {
+    for (const e of p.entities) {
+      const first = e.columns[0];
+      const keys = buildRows(p, e, NOW).map((r) => {
+        const v = r.cells[first.id];
+        // People may share a name, as people do; their handles may not.
+        if (first.kind === "person") return (v as { handle: string }).handle;
+        return typeof v === "object" && v != null && "en" in v ? (v as { en: string }).en : String(v);
+      });
+      expect(new Set(keys).size, `${e.id}: ${first.id}`).toBe(keys.length);
     }
   });
 });

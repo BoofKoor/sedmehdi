@@ -11,13 +11,18 @@ import type { Rng } from "./prng";
 const DAY = 86_400_000;
 
 export const g = {
-  person(r: Rng): Person {
+  /** `row`: pass the row index where the person is the record itself, so every handle is unique. */
+  person(r: Rng, row?: number): Person {
     const a = r.int(0, FIRST_COUNT - 1);
     const b = r.int(0, INITIAL_COUNT - 1);
-    return personAt(a, b, r.int(1, 9999));
+    return personAt(a, b, r.int(1, 9999), row);
   },
   company(r: Rng): string {
     return r.pick(COMPANIES);
+  },
+  /** The company of row `index`, so a table with as many rows as there are companies names each one once. */
+  companyAt(index: number): string {
+    return COMPANIES[index % COMPANIES.length];
   },
   /** "ORD-48213": a prefix and a number that grows with the row (newest rows have the highest). */
   code(prefix: string, start: number, index: number, step = 3): string {
@@ -31,6 +36,17 @@ export const g = {
   },
   status(r: Rng, statuses: readonly StatusDef[]): string {
     return r.weighted(statuses, (s) => s.weight).id;
+  },
+  /**
+   * A status from only those the row's other facts allow, by the same weights. Drawn on its own, a
+   * status contradicted the row beside it: an order delivered the hour it was placed, a server in
+   * maintenance carrying 83% load, a course in draft with a thousand students.
+   */
+  statusAmong(r: Rng, statuses: readonly StatusDef[], allowed: readonly string[]): string {
+    return r.weighted(
+      statuses.filter((s) => allowed.includes(s.id)),
+      (s) => s.weight,
+    ).id;
   },
   int(r: Rng, min: number, max: number): number {
     return r.int(min, max);
@@ -49,6 +65,10 @@ export const g = {
   /** An instant in the past, more often recent: epoch ms. */
   ago(r: Rng, now: Date, maxDays: number): number {
     return now.getTime() - Math.pow(r.next(), 2.2) * maxDays * DAY - r.int(0, 3600) * 1000;
+  },
+  /** An instant between `minDays` and `maxDays` ago, more often near the recent end: epoch ms. */
+  agoBetween(r: Rng, now: Date, minDays: number, maxDays: number): number {
+    return now.getTime() - (minDays + Math.pow(r.next(), 1.6) * (maxDays - minDays)) * DAY - r.int(0, 3600) * 1000;
   },
   /** An instant ahead of now (a due date): epoch ms. */
   ahead(r: Rng, now: Date, maxDays: number): number {
