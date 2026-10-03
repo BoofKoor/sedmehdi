@@ -1,0 +1,12 @@
+---
+import { resolveTech } from '../data/tech.mjs';
+interface Props { name: string }
+const { name } = Astro.props;
+const r = resolveTech(name);
+---
+<li class="chip">
+  {r.brand
+    ? <svg class="ic-brand" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={`--c-light:${r.light};--c-dark:${r.dark}`}><path d={r.brand.path} /></svg>
+    : <svg class="ic-stroke" viewBox="0 0 24 24" aria-hidden="true" focusable="false" set:html={r.own} />}
+  {name}
+</li>

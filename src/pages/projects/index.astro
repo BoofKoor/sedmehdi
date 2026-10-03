@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectGrid from '../../components/ProjectGrid.astro';
+import WorkStack from '../../components/WorkStack.astro';
+import { getCollection } from 'astro:content';
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+---
+<Base title="Work" description="Projects I designed, built and run.">
+  <section class="section">
+    <h1 class="display">Work</h1>
+    <p class="lead">Projects I designed, built and still run, with the problems behind them and the numbers after.</p>
+  </section>
+  <div style="padding-bottom: var(--space-9)"><div class="work-desk"><WorkStack projects={projects} /></div><div class="work-phone"><ProjectGrid projects={projects} /></div></div>
+</Base>

@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import { statSync } from 'node:fs';
+// the real size of the file, read at build time
+const kb = Math.max(1, Math.round(statSync('public/resume.pdf').size / 1024));
+---
+<Base title="Résumé" description="Résumé as a PDF.">
+  <section class="section" style="padding-bottom: var(--space-9)">
+    <h1 class="display">Résumé</h1>
+    <p class="lead">A one-page summary of experience, projects and skills.</p>
+    <a class="doc-card" href="/resume.pdf" download aria-labelledby="doc-name" aria-describedby="doc-meta">
+      <span class="doc-ic" aria-hidden="true"><svg viewBox="0 0 40 48" focusable="false"><path class="doc-sheet" d="M6 2.5h19l9 9v34H6z"/><path class="doc-fold" d="M25 2.5v9h9"/><text x="20" y="36" text-anchor="middle">PDF</text></svg></span>
+      <span class="doc-text"><span class="doc-name" id="doc-name"><span class="vh">Download </span>Résumé</span><span class="doc-meta" id="doc-meta">PDF, {kb} KB, one page</span></span>
+      <span class="doc-action" aria-hidden="true">Download</span>
+    </a>
+    <div class="actions"><a class="btn-plain" style="padding-left: 0" href="/about/">Read About Me</a></div>
+  </section>
+</Base>

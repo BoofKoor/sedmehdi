@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import { experience, skills, site } from '../data/site';
+import Tag from '../components/Tag.astro';
+---
+<Base title="About" description={`About ${site.name}.`}>
+  <section class="section">
+    <h1 class="display">About</h1>
+    {/* DUMMY CONTENT: replace with two or three sentences about who you are, what you like building, and what you are looking for next. */}
+    <p class="lead">I build backend services and the infrastructure they run on, mostly for products I also operate. I like systems that stay up without attention and tools that need no manual. Next, I want to work with a team on problems at a larger scale.</p>
+  </section>
+  <section class="section" aria-labelledby="exp">
+    <h2 class="section-title" id="exp">Experience</h2>
+    <ol class="timeline" style="margin-top: var(--space-5)">
+      {experience.map((e) => <li><span class="muted">{e.period}</span><div><h3>{e.title}</h3><p>{e.text}</p></div></li>)}
+    </ol>
+  </section>
+  <section class="section" aria-labelledby="skills">
+    <h2 class="section-title" id="skills">Skills</h2>
+    <div class="skills" style="margin-top: var(--space-5)">
+      {skills.map((s) => <div><h3>{s.group}</h3><ul class="chips">{s.items.map((i) => <Tag name={i} />)}</ul></div>)}
+    </div>
+  </section>
+</Base>

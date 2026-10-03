@@ -1,0 +1,103 @@
+/* sed.mehdi design tokens, v4: roles, type styles and shapes follow Apple's Human Interface Guidelines.
+   v4: dark background softened from #000000 to #121212 (secondary #1F1F1F, dividers #303030); Increase Contrast keeps pure black.
+   v5: status colours for the project status lights (live green, in-progress amber), 3:1 or more on both surfaces of each theme. */
+:root {
+  /* color roles (HIG-style semantic names) */
+  --color-background: #FFFFFF;
+  --color-background-secondary: #F4F4F4;
+  --color-label: #000000;
+  --color-label-secondary: #5E5E5E;
+  --color-separator: #E2E2E2;           /* decorative dividers only */
+  --color-separator-control: #8A8A8A;   /* control borders, 3:1 or more */
+  --color-tint: #EA5555;                /* brand accent: graphics, large text, the wordmark dot */
+  --color-tint-text: #D33F41;           /* links, small tinted text, filled button */
+  --color-on-tint: #FFFFFF;
+  --color-destructive: #B42318;
+  /* status lights: graphics only, the status is always written next to them. HIG's #34C759 / #FF9500 are 2.2:1 on white,
+     so the light theme uses deeper tones that reach 3:1 on the page and on the hover surface */
+  --color-status-live: #1E9A4A;       /* 3.64 on #FFF, 3.31 on #F4F4F4 */
+  --color-status-progress: #C97400;   /* 3.51 on #FFF, 3.19 on #F4F4F4 */
+
+  /* buttons: soft 3D. The filled button is identical in light and dark, so its white label stays 4.61:1 or more across the gradient */
+  --button-top: #D33F41;
+  --button-bottom: #BD3336;
+  --button-border: #9E2A2D;
+  --button-label: #FFFFFF;
+  --button-highlight: rgba(255, 255, 255, .30);
+  --button-shadow: 0 1px 2px rgba(90, 15, 15, .28), 0 8px 18px -8px rgba(211, 63, 65, .60);
+  --button-shadow-hover: 0 2px 4px rgba(90, 15, 15, .28), 0 12px 24px -10px rgba(211, 63, 65, .66);
+  --button-gray-top: #FFFFFF;
+  --button-gray-bottom: #F2F2F2;
+  --button-gray-border: #CFCFCF;
+  --button-gray-label: #000000;
+  --button-gray-highlight: #FFFFFF;
+  --button-gray-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+
+  /* type: HIG text styles at the default (Large) Dynamic Type size, in rem so the browser text size scales them */
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --text-display: clamp(2.625rem, 1.55rem + 4.3vw, 4.0625rem); --leading-display: 1.08; /* web hero only, not an HIG style */
+  --text-large-title: 2.125rem;  --leading-large-title: 2.5625rem;  /* 34/41 */
+  --text-title-1: 1.75rem;       --leading-title-1: 2.125rem;       /* 28/34 */
+  --text-title-2: 1.375rem;      --leading-title-2: 1.75rem;        /* 22/28 */
+  --text-title-3: 1.25rem;       --leading-title-3: 1.5625rem;      /* 20/25 */
+  --text-headline: 1.0625rem;    --leading-headline: 1.375rem;      /* 17/22, semibold */
+  --text-body: 1.0625rem;        --leading-body: 1.375rem;          /* 17/22 */
+  --leading-body-loose: 1.6875rem;                                  /* 17/27, long-form reading */
+  --text-callout: 1rem;          --leading-callout: 1.3125rem;      /* 16/21 */
+  --text-subhead: 0.9375rem;     --leading-subhead: 1.25rem;        /* 15/20 */
+  --text-footnote: 0.8125rem;    --leading-footnote: 1.125rem;      /* 13/18 */
+  --text-caption-1: 0.75rem;     --leading-caption-1: 1rem;         /* 12/16 */
+  --text-caption-2: 0.6875rem;   --leading-caption-2: 0.8125rem;    /* 11/13, the floor */
+  --weight-display: 300; --weight-regular: 400; --weight-semibold: 600;
+  --tracking-display: -0.018em; --tracking-wordmark: 0.563em;
+  --measure: 68ch;
+
+  /* layout */
+  --target-min: 44px;                                   /* HIG: hit region of at least 44x44 pt */
+  --margin: clamp(20px, 5vw, 48px);
+  --container: 1120px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;  --space-5: 24px;
+  --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;  --space-10: 128px;
+
+  /* shape, after Apple's three shape types: fixed, capsule (radius = half the height), concentric (inner = outer - padding) */
+  --radius-control: 12px;     /* fixed: buttons, inputs, swatches */
+  --radius-container: 24px;   /* fixed: code blocks, media, panels */
+  --radius-capsule: 999px;    /* capsule: technology chips, navigation highlights, focus rings */
+  --radius-chip: 999px;       /* technology chips: capsule, radius = half the height (16px) */
+
+  /* motion */
+  --ease: cubic-bezier(.2, .7, .2, 1); --duration: 180ms;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-background: #121212; --color-background-secondary: #1F1F1F; --color-label: #FFFFFF; --color-label-secondary: #A3A3A3;
+    --color-separator: #303030; --color-separator-control: #6B6B6B; --color-tint: #EA5555; --color-tint-text: #EA5555; --color-on-tint: #000000;
+    --color-destructive: #F97066; --color-status-live: #30D158; --color-status-progress: #FF9F0A;
+    --button-highlight: rgba(255, 255, 255, .26); --button-shadow: 0 1px 2px rgba(0, 0, 0, .7), 0 8px 20px -10px rgba(211, 63, 65, .55);
+    --button-shadow-hover: 0 2px 4px rgba(0, 0, 0, .7), 0 12px 26px -10px rgba(211, 63, 65, .6);
+    --button-gray-top: #2A2A2A; --button-gray-bottom: #1D1D1D; --button-gray-border: #3A3A3A; --button-gray-label: #FFFFFF;
+    --button-gray-highlight: rgba(255, 255, 255, .08); --button-gray-shadow: 0 1px 2px rgba(0, 0, 0, .7); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-background: #121212; --color-background-secondary: #1F1F1F; --color-label: #FFFFFF; --color-label-secondary: #A3A3A3;
+  --color-separator: #303030; --color-separator-control: #6B6B6B; --color-tint: #EA5555; --color-tint-text: #EA5555; --color-on-tint: #000000;
+  --color-destructive: #F97066; --color-status-live: #30D158; --color-status-progress: #FF9F0A;
+    --button-highlight: rgba(255, 255, 255, .26); --button-shadow: 0 1px 2px rgba(0, 0, 0, .7), 0 8px 20px -10px rgba(211, 63, 65, .55);
+    --button-shadow-hover: 0 2px 4px rgba(0, 0, 0, .7), 0 12px 26px -10px rgba(211, 63, 65, .6);
+    --button-gray-top: #2A2A2A; --button-gray-bottom: #1D1D1D; --button-gray-border: #3A3A3A; --button-gray-label: #FFFFFF;
+    --button-gray-highlight: rgba(255, 255, 255, .08); --button-gray-shadow: 0 1px 2px rgba(0, 0, 0, .7); color-scheme: dark;
+}
+/* Increase Contrast (HIG accessibility setting, exposed to the web as prefers-contrast) */
+@media (prefers-contrast: more) {
+  :root { --color-status-live: #15803D; --color-status-progress: #A85F00; --color-label-secondary: #3B3B3B; --color-separator: #8A8A8A; --color-separator-control: #3B3B3B; --color-tint-text: #B8282B; }
+  :root[data-theme="dark"] { --color-status-live: #30D158; --color-status-progress: #FFB020; --color-background: #000000; --color-background-secondary: #161616; --color-label-secondary: #D0D0D0; --color-separator: #6B6B6B; --color-separator-control: #B0B0B0; --color-tint-text: #FF8080; }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --color-status-live: #30D158; --color-status-progress: #FFB020; --color-background: #000000; --color-background-secondary: #161616; --color-label-secondary: #D0D0D0; --color-separator: #6B6B6B; --color-separator-control: #B0B0B0; --color-tint-text: #FF8080; }
+}
+/* concentric: set --outer-radius and --outer-pad on the parent; children use .concentric */
+.concentric { border-radius: max(0px, calc(var(--outer-radius, var(--radius-container)) - var(--outer-pad, 12px))); }
+@media (prefers-reduced-motion: reduce) { :root { --duration: 0ms; } }

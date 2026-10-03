@@ -1,0 +1,55 @@
+---
+// PROPOSAL W2 "sticky stack": full-width cards that stick under the bar and stack as you scroll; the card underneath
+// shrinks and dims as the next one covers it (--p, 0 to 1). Each project gets a stage: number, title, summary, KPI, stack.
+import type { CollectionEntry } from 'astro:content';
+import Arrow from './Arrow.astro';
+import Tag from './Tag.astro';
+import { statusState } from '../data/status';
+interface Props { projects: CollectionEntry<'projects'>[] }
+const { projects } = Astro.props;
+const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? new URL(p.data.demo).hostname : p.id);
+const n = String(projects.length).padStart(2, '0');
+---
+<div class="stack">
+  {projects.map((project, i) => { const p = project.data, id = project.id; return (
+    <a class="st-card" href={`/projects/${id}/`} style={`--i: ${i};${p.accent ? ` --accent: ${p.accent};` : ''}${p.logo ? ` --tint: ${p.logo.tint}; --logo-bg: ${p.logo.bg};` : ''}`} aria-labelledby={`st-t-${id}`} aria-describedby={`st-d-${id}`}>
+      <div class="st-inner">
+        <div class="st-text">
+          {p.logo && <span class="pj-logo" aria-hidden="true"><img src={p.logo.src} alt="" width="64" height="64" decoding="async" /></span>}
+          <span class="st-num" aria-hidden="true">{String(i + 1).padStart(2, '0')} / {n}</span>
+          <span class="st-title vtt" id={`st-t-${id}`} style={`--vtt: vt-t-${id}`}>{p.title}<span class="vh"> case study</span><Arrow id={`s-${id}`} /></span>
+          <div class="st-desc" id={`st-d-${id}`}>
+            <p class="st-sum">{p.summary}</p>
+            <div class="st-meta">
+              {p.metric && <span class="st-kpi">{p.metric.value}<small>{p.metric.label}</small></span>}
+              <span class="st-status"><span class="led" data-state={statusState(p.status)} aria-hidden="true"></span>{p.status}</span>
+            </div>
+          </div>
+          {p.stack.length > 0 && <ul class="chips st-chips" aria-hidden="true">{p.stack.slice(0, 4).map((s) => <Tag name={s} />)}</ul>}
+        </div>
+        <div class="st-media" aria-hidden="true">
+          {p.cover && p.device === 'phone' && <span class="phone vtc" style={`--vtc: vt-c-${id}`}><span class="window-view phone-view"><img src={p.cover.src} alt="" width="780" height="1688" loading="lazy" decoding="async" /></span></span>}
+          {p.cover && p.device !== 'phone' && <span class="window vtc" style={`--vtc: vt-c-${id}`}><span class="window-bar"><span class="window-url">{host(project)}</span></span><span class="window-view"><img src={p.cover.src} alt="" width="1600" height="1000" loading="lazy" decoding="async" /></span></span>}
+        </div>
+      </div>
+    </a>
+  ); })}
+</div>
+<script is:inline>
+  // W2: how far the next card covers this one (0 to 1) sets the shrink and dim; one listener, even when the page re-renders
+  (function () {
+    if (window.__smStack) removeEventListener('scroll', window.__smStack);
+    var cards = [].slice.call(document.querySelectorAll('.st-card')); if (!cards.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var queued = false;
+    function update() {
+      queued = false;
+      cards.forEach(function (c, i) {
+        var next = cards[i + 1], p = 0;
+        if (next && c.offsetParent) p = Math.max(0, Math.min(1, 1 - (next.getBoundingClientRect().top - c.getBoundingClientRect().top) / c.offsetHeight));
+        c.style.setProperty('--p', p.toFixed(3));
+      });
+    }
+    window.__smStack = function () { if (!queued) { queued = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', window.__smStack, { passive: true }); update();
+  })();
+</script>

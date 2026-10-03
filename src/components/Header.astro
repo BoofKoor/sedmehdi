@@ -1,0 +1,39 @@
+---
+import Mark from './Mark.astro';
+import { site } from '../data/site';
+interface Props { back?: { href: string; label: string } }
+const { back } = Astro.props;
+const path = Astro.url.pathname;
+const links = [
+  { href: '/projects/', label: 'Work' },
+  { href: '/about/', label: 'About' },
+  { href: '/resume/', label: 'Résumé' },
+  { href: '/contact/', label: 'Contact' },
+];
+const current = (href: string) => (path === href || path.startsWith(href) ? 'page' : undefined);
+---
+<header class={back ? 'bar has-back' : 'bar'}>
+  <div class="top">
+    {back && <a class="back-btn target" href={back.href}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>{back.label}</a>}
+    <a class="lockup" href="/" aria-label={`${site.wordmark} home`}>
+      <Mark />
+      <span class="wm">sed<span class="wm-dot">.</span>mehdi</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      {links.map((l) => <a class="target" href={l.href} aria-current={current(l.href)}>{l.label}</a>)}
+    </nav>
+    <!-- A switch: the label stays "Dark theme" and aria-checked carries the state. -->
+    <button class="theme target" type="button" id="theme" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme">
+      <span class="sw" aria-hidden="true">
+        <span class="sw-stars"><i></i><i></i><i></i></span>
+        <span class="sw-knob">
+          <svg class="sw-icon" viewBox="0 0 24 24" focusable="false">
+            <path class="sw-rays" d="M12 2.2v2.3M12 19.5v2.3M2.2 12h2.3M19.5 12h2.3M5.1 5.1l1.6 1.6M17.3 17.3l1.6 1.6M5.1 18.9l1.6-1.6M17.3 6.7l1.6-1.6"/>
+            <circle class="sw-core" cx="12" cy="12" r="5"/>
+            <circle class="sw-bite" cx="15.2" cy="8.8" r="6.5"/>
+          </svg>
+        </span>
+      </span>
+    </button>
+  </div>
+</header>

@@ -1,0 +1,42 @@
+---
+// Phones only: the floating tab bar in frosted glass (approved: "T3 glass"). Four tabs and a round coral Contact button.
+// Closed tabs are outline icons; the current tab opens into a white capsule with a coral duotone icon and its name, and
+// on every page change the capsule travels from the previous tab to the new one. Icons: Phosphor (MIT), src/data/icons.ts.
+import { ICONS } from '../data/icons';
+const path = Astro.url.pathname;
+const tabs = [
+  { href: '/', label: 'Home', icon: 'house-line' },
+  { href: '/projects/', label: 'Work', icon: 'stack' },
+  { href: '/about/', label: 'About', icon: 'user-circle' },
+  { href: '/resume/', label: 'Résumé', icon: 'file-text' },
+];
+const current = (href: string) => ((href === '/' ? path === '/' : path.startsWith(href)) ? 'page' : undefined);
+const svg = (name: string, w: 'regular' | 'duotone' | 'fill') => `<svg class="w-${w}" viewBox="0 0 256 256" aria-hidden="true" focusable="false">${ICONS[name][w]}</svg>`;
+---
+<nav class="tabbar" aria-label="Sections">
+  <div class="tb-pill">
+    {tabs.map((t) => (
+      <a class="tab" href={t.href} aria-current={current(t.href)}>
+        <span class="tab-ic" set:html={svg(t.icon, 'regular') + svg(t.icon, 'duotone')} />
+        <span class="tab-label">{t.label}</span>
+      </a>
+    ))}
+  </div>
+  <a class="tb-fab" href="/contact/" aria-current={current('/contact/')} aria-label="Contact"><span class="fab-ic" set:html={svg('paper-plane-tilt', 'fill')} /></a>
+</nav>
+<script is:inline>
+  (function () {
+    var bar = document.querySelector('.tabbar:not([data-bound])'); if (!bar) return; bar.setAttribute('data-bound', '');
+    var tabs = [].slice.call(bar.querySelectorAll('.tab')), cur = -1;
+    tabs.forEach(function (t, i) { if (t.getAttribute('aria-current') === 'page') cur = i; });
+    // remember which tab was open, so the next page can move the capsule from it
+    bar.addEventListener('click', function (e) { if (e.target.closest('a')) try { sessionStorage.setItem('sm-tab-from', String(cur)); } catch (x) {} });
+    var from = null;
+    try { from = sessionStorage.getItem('sm-tab-from'); sessionStorage.removeItem('sm-tab-from'); } catch (x) {}
+    if (from === null || +from === cur || +from < 0 || cur < 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var a = tabs[+from], b = tabs[cur]; if (!a || !b) return;
+    // start as the previous page looked (its tab open, this one closed), then let the transitions carry the capsule over
+    bar.classList.add('tb-instant'); a.classList.add('is-from'); b.classList.add('is-pre');
+    requestAnimationFrame(function () { requestAnimationFrame(function () { bar.classList.remove('tb-instant'); a.classList.remove('is-from'); b.classList.remove('is-pre'); }); });
+  })();
+</script>

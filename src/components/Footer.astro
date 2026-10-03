@@ -1,0 +1,14 @@
+---
+import Mark from './Mark.astro';
+import { site } from '../data/site';
+const year = new Date().getFullYear();
+---
+<footer class="foot">
+  <Mark />
+  <span>{site.wordmark}, {year}</span>
+  <nav aria-label="Elsewhere">
+    <a class="target" href={site.github}>GitHub</a>
+    <a class="target" href={site.telegram}>Telegram</a>
+    <a class="target" href={`mailto:${site.email}`}>Email</a>
+  </nav>
+</footer>

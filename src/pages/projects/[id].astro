@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+import Tag from '../../components/Tag.astro';
+import Arrow from '../../components/Arrow.astro';
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({ params: { id: project.id }, props: { project } }));
+}
+const { project } = Astro.props;
+const p = project.data;
+const { Content } = await render(project);
+// phone fact tiles: the role (long text) spans the row; if the half tiles are odd, the last one spans it too, so no tile
+// is left alone beside an empty slot
+const halves = [p.metric && 'metric', 'status', p.period && 'period', p.github && 'source', p.demo && 'live'].filter(Boolean);
+const tile = (k: string) => (halves.length % 2 === 1 && k === halves[halves.length - 1] ? 'fact wide' : 'fact');
+// the next project, by order, wrapping round: no case study ends in a dead end
+const all = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const next = all[(all.findIndex((x) => x.id === project.id) + 1) % all.length];
+import { statusState } from '../../data/status';
+---
+<Base title={p.title} description={p.summary} back={{ href: '/projects/', label: 'Work' }}>
+  <section class="section" style="padding-bottom: 0">
+    <h1 class="display vtt" style={`--vtt: vt-t-${project.id}`}>{p.title}</h1>
+    <p class="lead">{p.summary}</p>
+    {p.cover && p.device === 'phone' && <figure class="case-device vtc" style={`${p.accent ? `--accent:${p.accent};` : ''} --vtc: vt-c-${project.id}`}><span class="phone"><span class="window-view phone-view"><img src={p.cover.src} alt={p.cover.alt} width="780" height="1688" decoding="async" /></span></span></figure>}
+    {p.cover && p.device !== 'phone' && <figure class="window case-window vtc" style={`--vtc: vt-c-${project.id}`}><div class="window-bar" aria-hidden="true"><span class="window-url"><svg viewBox="0 0 12 14" focusable="false"><path d="M3 6V4a3 3 0 0 1 6 0v2M2 6h8v7H2z"/></svg>{p.demo ? new URL(p.demo).hostname : project.id}</span></div><div class="window-view"><img src={p.cover.src} alt={p.cover.alt} width="1600" height="1000" decoding="async" /></div></figure>}
+  </section>
+  <div class="case">
+    <aside aria-label="Project facts">
+      <dl class="facts">
+        {p.metric && <div class={tile('metric')}><dt>{p.metric.label}</dt><dd class="metric">{p.metric.value}</dd></div>}
+        <div class="fact wide"><dt>Role</dt><dd>{p.role}</dd></div>
+        <div class={tile('status')}><dt>Status</dt><dd class="stat-status-inline"><span class="led" data-state={statusState(p.status)} aria-hidden="true"></span>{p.status}</dd></div>
+        {p.period && <div class={tile('period')}><dt>Period</dt><dd>{p.period}</dd></div>}
+        {p.stack.length > 0 && <div class="fact wide"><dt class="row">Stack</dt><dd class="row"><ul class="chips">{p.stack.map((s) => <Tag name={s} />)}</ul></dd></div>}
+        {p.github && <div class={tile('source')}><dt>Source</dt><dd><a href={p.github}>GitHub</a></dd></div>}
+        {p.demo && <div class={tile('live')}><dt>Live</dt><dd><a href={p.demo}>{new URL(p.demo).hostname}</a></dd></div>}
+      </dl>
+      <p class="back"><a class="btn-plain" style="padding-left:0" href="/projects/">All Work</a></p>
+    </aside>
+    <article class="prose"><Content /></article>
+  </div>
+  <nav class="next" aria-label="Next project">
+    <a class="next-card" href={`/projects/${next.id}/`} style={next.data.accent ? `--accent:${next.data.accent}` : undefined}>
+      <span class="next-label">Next project</span>
+      <span class="next-title">{next.data.title}<Arrow id={`n-${next.id}`} /></span>
+      <span class="next-sum">{next.data.summary}</span>
+    </a>
+  </nav>
+</Base>

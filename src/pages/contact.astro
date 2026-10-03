@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+import { siTelegram, siGithub } from 'simple-icons';
+const handle = (url: string) => new URL(url).pathname.replace(/^\/+|\/+$/g, '');
+---
+<Base title="Contact" description="How to reach me.">
+  <section class="section" style="padding-bottom: var(--space-9)">
+    <h1 class="display">Contact</h1>
+    <p class="lead">Email is the fastest way to reach me. Tell me what you are building and when you need it.</p>
+    <!-- a grouped list (HIG): one row per way to reach me; the email row can also copy the address -->
+    <ul class="contact-list">
+      <li>
+        <a class="row" href={`mailto:${site.email}`}><span class="row-ic ic-mail" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="3.5" y="6" width="17" height="12.5" rx="2.5"/><path d="M4.5 7.5l7.5 6 7.5-6"/></svg></span><span class="row-text"><span class="row-label">Email</span><span class="row-value">{site.email}</span></span></a>
+        <button class="row-copy" type="button" data-copy={site.email} aria-label="Copy email address"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 5.5h-8a2 2 0 0 0-2 2v8"/></svg></button>
+      </li>
+      <li><a class="row" href={site.telegram}><span class="row-ic ic-tg" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d={siTelegram.path}/></svg></span><span class="row-text"><span class="row-label">Telegram</span><span class="row-value">@{handle(site.telegram)}</span></span><svg class="row-go" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></a></li>
+      <li><a class="row" href={site.github}><span class="row-ic ic-gh" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d={siGithub.path}/></svg></span><span class="row-text"><span class="row-label">GitHub</span><span class="row-value">{handle(site.github)}</span></span><svg class="row-go" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></a></li>
+      <li><div class="row"><span class="row-ic ic-loc" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span class="row-text"><span class="row-label">Location</span><span class="row-value">{site.location}</span></span></div></li>
+    </ul>
+    <p class="toast" role="status" aria-live="polite"></p>
+  </section>
+  <script is:inline>
+    (function () {
+      document.querySelectorAll('.row-copy:not([data-bound])').forEach(function (b) {
+        b.setAttribute('data-bound', '');
+        b.addEventListener('click', function () {
+          var toast = document.querySelector('.toast');
+          function say(text) { if (!toast) return; toast.textContent = text; toast.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { toast.classList.remove('show'); }, 1800); }
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function () { say('Email address copied'); }, function () { say('Copy failed: press and hold the address'); });
+          else say('Copy failed: press and hold the address');
+        });
+      });
+    })();
+  </script>
+</Base>

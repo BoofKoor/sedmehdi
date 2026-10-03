@@ -1,0 +1,9 @@
+---
+// The launching arrow (chevron with the monogram's 2:1 arms and a fading trail); id makes its gradient unique.
+interface Props { id: string }
+const { id } = Astro.props;
+---
+<span class="go" aria-hidden="true"><svg viewBox="0 0 30 16" focusable="false">
+  <defs><linearGradient id={`go-${id}`} x1="3" y1="0" x2="26" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" class="go-t0"/><stop offset="1" class="go-t1"/></linearGradient></defs>
+  <path class="go-trail" pathLength="1" d="M3 8H26" stroke={`url(#go-${id})`}/><path class="go-head" d="M19 4L27 8L19 12"/>
+</svg></span>

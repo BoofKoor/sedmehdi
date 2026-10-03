@@ -1,0 +1,88 @@
+---
+import Base from '../layouts/Base.astro';
+import HeroMark from '../components/HeroMark.astro';
+import ProjectGrid from '../components/ProjectGrid.astro';
+import WorkStack from '../components/WorkStack.astro';
+import { getCollection } from 'astro:content';
+import { site, areas } from '../data/site';
+const featured = (await getCollection('projects', ({ data }) => data.featured)).sort((a, b) => a.data.order - b.data.order);
+---
+<Base>
+  <section class="hero">
+    <div>
+      <h1 class="display">{site.name}</h1>
+      <p class="lead">{site.intro}</p>
+      <div class="actions">
+        <a class="btn" href="/contact/">Get in Touch</a>
+        <a class="btn-gray" href="/resume/">View Résumé</a>
+      </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true"><HeroMark /></div>
+  </section>
+  <script is:inline>
+    // The hero mark is the hub of the background network. The packet script in Base.astro reads window.smHub:
+    // active() once the outline is drawn, center() to steer packets toward it, hit() when a packet reaches the outline.
+    (function () {
+      if (window.__smHero) window.__smHero.destroy();  // the single-file preview re-renders this page on navigation
+      var still = matchMedia('(prefers-reduced-motion: reduce)'), t0 = performance.now();
+      var hub = document.querySelector('.hero-visual .hub'), line = hub && hub.querySelector('.hub-line');
+      var pulses = hub && hub.querySelector('.hub-pulses'), flash = hub && hub.querySelector('.hub-flash');
+      if (!hub || !line || !line.getTotalLength) return;
+      var samples = [], L = line.getTotalLength(), lastHit = 0;
+      for (var i = 0; i <= 480; i++) { var p = line.getPointAtLength(L * i / 480); samples.push([p.x, p.y, i / 480]); }
+      function arrive(f, x, y) {
+        [1, -1].forEach(function (way) {  // a light runs along the outline both ways from the arrival point
+          var el = line.cloneNode(); el.setAttribute('class', 'hub-pulse'); el.style.strokeDasharray = '.08 .92'; pulses.appendChild(el);
+          var a = el.animate([{ strokeDashoffset: -(f - 0.04), opacity: 1 }, { strokeDashoffset: -(f - 0.04 + way * 0.24), opacity: 0 }], { duration: 1400, easing: 'cubic-bezier(.2, .7, .2, 1)' });
+          a.onfinish = function () { el.remove(); };
+        });
+        var ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');  // a ring opens where it landed
+        ring.setAttribute('cx', x); ring.setAttribute('cy', y); ring.setAttribute('r', 7); ring.setAttribute('class', 'hub-ring'); pulses.appendChild(ring);
+        var ra = ring.animate([{ transform: 'scale(1)', opacity: 0.9 }, { transform: 'scale(6)', opacity: 0 }], { duration: 800, easing: 'cubic-bezier(.2, .7, .2, 1)' });
+        ra.onfinish = function () { ring.remove(); };
+        if (flash) flash.animate([{ opacity: 0 }, { opacity: 0.16 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' });
+      }
+      window.smHub = {
+        // only once the outline is drawn (1.8s): a light cannot run along a line that is not there yet
+        active: function () { return hub.isConnected && hub.getBoundingClientRect().width > 0 && !still.matches && performance.now() - t0 > 1900; },
+        center: function () { var r = hub.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; },
+        hit: function (x, y) {  // x, y in viewport pixels; true when the packet reached the outline (within 9px)
+          var now = performance.now(); if (now - lastHit < 700) return false;  // no bursts: at most one arrival every 0.7s
+          var m = hub.getScreenCTM(); if (!m || pulses.childElementCount > 15) return false;
+          var q = new DOMPoint(x, y).matrixTransform(m.inverse()), best = 1e18, f = 0, sx = 0, sy = 0;
+          for (var i = 0; i < samples.length; i++) { var dx = samples[i][0] - q.x, dy = samples[i][1] - q.y, dd = dx * dx + dy * dy; if (dd < best) { best = dd; f = samples[i][2]; sx = samples[i][0]; sy = samples[i][1]; } }
+          if (Math.sqrt(best) * m.a > 9) return false;
+          lastHit = now; arrive(f, sx, sy); return true;
+        },
+      };
+      window.__smHero = { destroy: function () { window.smHub = null; } };
+    })();
+  </script>
+
+  <section class="section" aria-labelledby="work">
+    <h2 class="section-title" id="work">Selected Work</h2>
+    <p class="sub">Products I designed, built and still run.</p>
+    <!-- desktop: the sticky stack; phones: the swipeable cards (the hidden one is display: none) -->
+    <div class="work-desk"><WorkStack projects={featured} /></div>
+    <div class="work-phone"><ProjectGrid projects={featured} carousel /></div>
+  </section>
+
+
+  <section class="section" aria-labelledby="areas">
+    <h2 class="section-title" id="areas">What I Work On</h2>
+    <div class="areas">{areas.map((a) => <div><h3>{a.title}</h3><p>{a.text}</p></div>)}</div>
+  </section>
+
+  <section class="section contact" aria-labelledby="contact">
+    <div>
+      <h2 class="section-title" id="contact">Have a project in mind?</h2>
+      <p class="sub" style="margin:0">Tell me what you are building. I reply to every message.</p>
+      <div class="actions"><a class="btn" href={`mailto:${site.email}`}>Email Me</a></div>
+    </div>
+    <ul class="links">
+      <li><a href={site.github}>GitHub</a></li>
+      <li><a href={site.telegram}>Telegram</a></li>
+      <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+    </ul>
+  </section>
+</Base>

@@ -1,0 +1,16 @@
+{
+  "name": "sed-mehdi-site",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "single-file": "astro build && node scripts/single-file.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.3.5",
+    "simple-icons": "^16.33.0"
+  }
+}

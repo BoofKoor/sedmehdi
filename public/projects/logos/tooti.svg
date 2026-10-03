@@ -1,0 +1,52 @@
+<svg width="120" height="131" viewBox="0 0 220 240" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="_R_2lfdb_-m-body" cx="38%" cy="35%" r="75%">
+  <stop offset="0%" stop-color="#48D2BD"></stop>
+  <stop offset="55%" stop-color="#2BB7A3"></stop>
+  <stop offset="100%" stop-color="#1F9C8B"></stop>
+</radialGradient>
+<radialGradient id="_R_2lfdb_-m-belly" cx="50%" cy="35%" r="70%">
+  <stop offset="0%" stop-color="#FFFFFF"></stop>
+  <stop offset="55%" stop-color="#F2FBF8"></stop>
+  <stop offset="100%" stop-color="#C8E8DF"></stop>
+</radialGradient>
+<radialGradient id="_R_2lfdb_-m-chest" cx="50%" cy="35%" r="65%">
+  <stop offset="0%" stop-color="#FFFFFF"></stop>
+  <stop offset="70%" stop-color="#EAF9F5"></stop>
+  <stop offset="100%" stop-color="#D2EFE7"></stop>
+</radialGradient>
+<radialGradient id="_R_2lfdb_-m-beak" cx="50%" cy="30%" r="70%">
+  <stop offset="0%" stop-color="#FFB142"></stop>
+  <stop offset="100%" stop-color="#E07B00"></stop>
+</radialGradient>
+<linearGradient id="_R_2lfdb_-m-wing" x1="0" x2="0" y1="0" y2="1">
+  <stop offset="0%" stop-color="#249685"></stop>
+  <stop offset="100%" stop-color="#157B6E"></stop>
+</linearGradient>
+<filter id="_R_2lfdb_-m-shadow" x="-20%" y="-10%" width="140%" height="125%">
+  <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0B2A22" flood-opacity="0.14"></feDropShadow>
+</filter></defs>
+<ellipse cx="110" cy="232" rx="56" ry="5" fill="#0B2A22" opacity=".09"></ellipse>
+<ellipse cx="90" cy="56" rx="8" ry="22" fill="#FF375F" transform="rotate(-32 110 70)"></ellipse>
+<ellipse cx="110" cy="44" rx="9" ry="30" fill="#FFD60A"></ellipse>
+<ellipse cx="130" cy="56" rx="8" ry="22" fill="#64D2FF" transform="rotate(32 110 70)"></ellipse>
+<ellipse cx="32" cy="124" rx="18" ry="32" fill="url(#_R_2lfdb_-m-wing)" transform="rotate(-38 32 124)"></ellipse>
+<ellipse cx="188" cy="124" rx="18" ry="32" fill="url(#_R_2lfdb_-m-wing)" transform="rotate(38 188 124)"></ellipse>
+<g transform="rotate(-3 110 142)">
+  <circle cx="110" cy="142" r="78" fill="url(#_R_2lfdb_-m-body)" filter="url(#_R_2lfdb_-m-shadow)"></circle>
+  <ellipse cx="110" cy="126" rx="62" ry="52" fill="url(#_R_2lfdb_-m-chest)"></ellipse>
+  <ellipse cx="110" cy="172" rx="46" ry="42" fill="url(#_R_2lfdb_-m-belly)"></ellipse>
+  <circle cx="72" cy="142" r="11" fill="#FF375F" opacity=".34"></circle>
+  <circle cx="148" cy="142" r="11" fill="#FF375F" opacity=".34"></circle>
+  <g stroke="#14171D" stroke-width="2.6" stroke-linecap="round" fill="none">
+    <path d="M82 94 Q92 90 102 94"></path>
+    <path d="M118 94 Q128 90 138 94"></path>
+  </g>
+  <g stroke="#14171D" stroke-width="3.6" stroke-linecap="round" fill="none">
+    <path d="M83 122 Q92 113 101 122"></path>
+    <path d="M119 122 Q128 113 137 122"></path>
+  </g>
+  <path d="M91 140 Q110 134 129 140 Q124 162 110 164 Q96 162 91 140 Z" fill="url(#_R_2lfdb_-m-beak)"></path>
+  <ellipse cx="110" cy="152" rx="10" ry="7.5" fill="#A23A1B"></ellipse>
+  <ellipse cx="110" cy="155" rx="5" ry="3" fill="#FF6B8A"></ellipse>
+  <path d="M100 159 Q110 167 120 159 Q110 164 100 159 Z" fill="#C56500"></path>
+</g></svg>
