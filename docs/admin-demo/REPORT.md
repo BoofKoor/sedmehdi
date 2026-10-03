@@ -2,7 +2,7 @@
 
 پنل مدیریت GozarX حالا به‌شکل یک کیت قابل‌برندسازی (white-label) با دادهٔ ساختگی، داخل پورتفولیو در مسیر `/lab/admin/` منتشر می‌شود. یک کد برای پنج کسب‌وکار کار می‌کند: سرویس VPN، فضای کار تیمی (SaaS)، فروشگاه آنلاین لوازم خانه، آکادمی آنلاین و چاپخانهٔ چاپ‌وارسال. همه‌چیز از فایل‌های استاتیک و داخل مرورگر اجرا می‌شود: نه API هست، نه ورود، نه هیچ درخواستی به میزبان دیگر.
 
-- شاخه: `feat/admin-demo`، با PR به `baseline`: <!--PR-->
+- شاخه: `feat/admin-demo`، با PR به `baseline`: [BoofKoor/sedmehdi#1](https://github.com/BoofKoor/sedmehdi/pull/1)
 - اجرای محلی: `npm install`، بعد `npm run build` و سرو کردن `dist/` (مثلاً `python3 -m http.server 4321 --directory dist`)، و باز کردن `http://localhost:4321/lab/admin/?profile=vpn`.
 - بررسی‌ها: `npm run test:demo` (تست‌های واحد) و `python3 scripts/qa/check_admin_demo.py http://localhost:4321 --prove` (بررسی‌های مرورگر، هر کدام اول روی صفحهٔ خراب و بعد روی صفحهٔ درست).
 
