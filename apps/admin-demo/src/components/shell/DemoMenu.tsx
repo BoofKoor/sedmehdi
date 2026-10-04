@@ -115,7 +115,7 @@ export function DemoMenu({
           {t("demo.reset")}
         </Item>
         <Sep />
-        <Item href="/projects/gozarx/">
+        <Item href="/projects/spindle/">
           <ExternalLink className="h-4 w-4 shrink-0 text-content-muted" aria-hidden />
           {t("demo.caseStudy")}
         </Item>

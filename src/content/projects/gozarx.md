@@ -8,7 +8,6 @@ stack: ["Python", "aiogram 3", "FastAPI", "PostgreSQL", "Redis", "Docker Compose
 metric: { value: "119k", label: "Registered users" }
 github: "https://github.com/BoofKoor/GozarX"
 demo: "https://gozarx.net"
-lab: "/lab/admin/?profile=vpn"   # the admin panel as a white-label demo with synthetic data (apps/admin-demo)
 cover: { src: "/projects/gozarx.webp", alt: "The GozarX locations page, with the countries a free config is offered in" }
 accent: "#020617"   # sampled from the site background; white text 20.17:1
 logo: { src: "/projects/logos/gozarx.svg", bg: "#0B1222", tint: "#2563EB" }   # from the project repo; tint sampled from the logo
@@ -25,6 +24,7 @@ Many people in Iran lose access to the open internet every day. The all-in-one a
 - A Telegram bot and a website, gozarx.net, where anyone can claim one free config a day, pick a location, and grow their daily allowance by inviting friends. No signup and no payments.
 - A Python backend: aiogram 3 over webhooks with FastAPI, an arq worker, PostgreSQL with SQLAlchemy and Alembic, and Redis, behind nginx and installed with one script on Docker Compose.
 - A React admin panel, a Next.js public site in Persian and English, and nightly database backups.
+- The admin panel became a project of its own, the [Spindle Admin Kit](/projects/spindle/): the same console, white-labelled for five businesses and run on synthetic data, with a live demo.
 
 ## Challenges
 

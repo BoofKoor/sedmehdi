@@ -5,14 +5,14 @@
 import type { CollectionEntry } from 'astro:content';
 import Arrow from './Arrow.astro';
 import { statusState } from '../data/status';
-// `lab`: a project's on-site live demo (its `lab` path) as a button under its card, outside the card's link
-interface Props { projects: CollectionEntry<'projects'>[]; carousel?: boolean; lab?: boolean }
-const { projects, carousel = false, lab = false } = Astro.props;
-const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? new URL(p.data.demo).hostname : p.id);
+import { demoLabel } from '../data/links';
+interface Props { projects: CollectionEntry<'projects'>[]; carousel?: boolean }
+const { projects, carousel = false } = Astro.props;
+const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? demoLabel(p.data.demo, Astro.site) : p.id);
 ---
 <div class={carousel ? 'framed carousel' : 'framed'}>
   {projects.map((project, i) => { const p = project.data, id = project.id, lead = i === 0; return (
-    <><a class={lead ? 'fr-card fr-lead' : 'fr-card'} href={`/projects/${id}/`} data-device={p.device} style={`${p.accent ? `--accent:${p.accent};` : ''}${p.logo ? ` --tint:${p.logo.tint}; --logo-bg:${p.logo.bg};` : ''}`}
+    <a class={lead ? 'fr-card fr-lead' : 'fr-card'} href={`/projects/${id}/`} data-device={p.device} style={`${p.accent ? `--accent:${p.accent};` : ''}${p.logo ? ` --tint:${p.logo.tint}; --logo-bg:${p.logo.bg};` : ''}`}
        aria-labelledby={`fr-t-${id}`} aria-describedby={`fr-d-${id}`}>
       <span class="fr-text">
         {p.logo && <span class="pj-logo" aria-hidden="true"><img src={p.logo.src} alt="" width="64" height="64" decoding="async" /></span>}
@@ -26,7 +26,6 @@ const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? new URL(p.data.d
       {p.cover && p.device === 'phone' && <span class="phone fr-phone vtc" style={`--vtc: vt-c-${id}`} aria-hidden="true"><span class="window-view phone-view"><img src={p.cover.src} alt="" width="780" height="1688" loading="lazy" decoding="async" /></span></span>}
       {p.cover && p.device !== 'phone' && <span class="window fr-window vtc" style={`--vtc: vt-c-${id}`} aria-hidden="true"><span class="window-bar"><span class="window-url"><svg viewBox="0 0 12 14" focusable="false"><path d="M3 6V4a3 3 0 0 1 6 0v2M2 6h8v7H2z"/></svg>{host(project)}</span></span><span class="window-view"><img src={p.cover.src} alt="" width="1600" height="1000" loading="lazy" decoding="async" /></span></span>}
     </a>
-    {lab && p.lab && <a class="btn-gray fr-lab" href={p.lab}><span class="st-lab-dot" aria-hidden="true"></span>Live Demo<span class="vh"> of the {p.title} admin panel</span></a>}</>
   ); })}
 </div>
 {carousel && <div class="dots" aria-hidden="true">{projects.map((_, i) => <span class={i === 0 ? 'dot on' : 'dot'}></span>)}</div>}

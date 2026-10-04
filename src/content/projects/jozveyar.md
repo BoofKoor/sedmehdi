@@ -11,7 +11,7 @@ cover: { src: "/projects/jozveyar.webp", alt: "The Jozveyar home page: drop your
 accent: "#4E5B43"   # a deeper tone of the brand #768468 (3.98:1 with white); white text 7.24:1
 logo: { src: "/projects/logos/jozveyar.svg", bg: "#F3F5EF", tint: "#768468" }   # from the project repo; tint sampled from the logo
 featured: true
-order: 3
+order: 4
 ---
 
 ## The idea

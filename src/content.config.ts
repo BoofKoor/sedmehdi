@@ -13,10 +13,10 @@ const projects = defineCollection({
     stack: z.array(z.string()),
     metric: z.object({ value: z.string(), label: z.string() }).optional(),
     github: z.string().url().optional(),
-    demo: z.string().url().optional(),
-    // a live demo hosted on this site (a path, e.g. the admin panel demo under /lab/), shown as a "Live demo" button
-    lab: z.string().startsWith('/').optional(),
-    // a wide screenshot, 1600x611, in public/projects/
+    // where the project runs: its own site (a URL), or a page of this site (a path: the admin kit's demo at /lab/admin/),
+    // which the case study opens with a "Try the Live Demo" button
+    demo: z.union([z.string().url(), z.string().regex(/^\/(?!\/)/, 'a path on this site starts with one slash')]).optional(),
+    // a wide screenshot, 1600x1000 (16:10), in public/projects/
     cover: z.object({ src: z.string(), alt: z.string() }).optional(),
     // the project's own logo (an SVG in public/projects/logos/), its tile colour and the brand colour for glows
     logo: z.object({ src: z.string(), bg: z.string(), tint: z.string() }).optional(),

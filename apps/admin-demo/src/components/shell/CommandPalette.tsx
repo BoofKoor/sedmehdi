@@ -173,7 +173,7 @@ export function CommandPalette({ items, actions, onClose, tab }: { items: NavIte
       { id: "help:keys", group: t("palette.help"), label: t("demo.shortcuts"), icon: Keyboard, keywords: ["keyboard", "shortcuts", "keys", "?", "میانبر"], run: actions.openShortcuts },
       { id: "help:about", group: t("palette.help"), label: t("demo.about"), icon: Info, keywords: ["about", "demo", "درباره"], run: actions.openAbout },
       { id: "help:reset", group: t("palette.help"), label: t("demo.reset"), icon: RotateCcw, keywords: ["reset", "default", "بازنشانی"], run: actions.reset },
-      { id: "link:case", group: t("palette.links"), label: t("demo.caseStudy"), icon: ExternalLink, keywords: ["gozarx", "case study", "project", "کیس"], run: () => location.assign("/projects/gozarx/") },
+      { id: "link:case", group: t("palette.links"), label: t("demo.caseStudy"), icon: ExternalLink, keywords: ["spindle", "case study", "project", "کیس"], run: () => location.assign("/projects/spindle/") },
       { id: "link:home", group: t("palette.links"), label: t("demo.home"), icon: Home, keywords: ["home", "portfolio", "sed.mehdi", "خانه"], run: () => location.assign("/") },
     );
     return out;

@@ -45,7 +45,7 @@ export const UI = {
   "demo.about": { en: "About this demo", fa: "دربارهٔ این دمو" },
   "demo.reset": { en: "Reset the demo", fa: "بازنشانی دمو" },
   "demo.resetDone": { en: "The demo is back to its defaults", fa: "دمو به حالت پیش‌فرض برگشت" },
-  "demo.caseStudy": { en: "GozarX case study", fa: "کیس‌استادی GozarX" },
+  "demo.caseStudy": { en: "Spindle case study", fa: "کیس‌استادی Spindle" },
   "demo.home": { en: "Portfolio home", fa: "صفحهٔ اصلی پورتفولیو" },
   "demo.shortcuts": { en: "Keyboard shortcuts", fa: "میانبرهای صفحه‌کلید" },
   "demo.links": { en: "Links", fa: "پیوندها" },
@@ -53,8 +53,8 @@ export const UI = {
   // about dialog
   "about.title": { en: "About this demo", fa: "دربارهٔ این دمو" },
   "about.p1": {
-    en: "This is the admin panel I built for GozarX, turned into a white-label kit. One configuration object per business drives the brand, the navigation, the metrics, the charts, the tables and every word of copy, in English and Persian.",
-    fa: "این همان پنل مدیریتی است که برای GozarX ساختم، به‌شکل یک کیت قابل برندسازی. برای هر کسب‌وکار یک شیء پیکربندی، برند، منو، شاخص‌ها، نمودارها، جدول‌ها و همهٔ متن‌ها را به انگلیسی و فارسی تعیین می‌کند.",
+    en: "Spindle Admin Kit: the admin panel I built for GozarX, turned into a white-label kit. One profile per business drives the brand, the navigation, the metrics, the charts, the tables and every word of copy, in English and Persian.",
+    fa: "Spindle Admin Kit همان پنل مدیریتی است که برای GozarX ساختم، به‌شکل یک کیت قابل برندسازی. برای هر کسب‌وکار یک پروفایل، برند، منو، شاخص‌ها، نمودارها، جدول‌ها و همهٔ متن‌ها را به انگلیسی و فارسی تعیین می‌کند.",
   },
   "about.p2": {
     en: "Every figure is synthetic, generated in your browser from a fixed seed: nothing is fetched, nothing is sent, and no real business or person is behind any number.",
