@@ -519,6 +519,27 @@ async def card_fit_check(browser, base):
         await ctx.close()
     return problems
 
+TITLE_LOGO = r"""() => [...document.querySelectorAll('.st-card, .fr-card')].filter(c => c.getClientRects().length && c.querySelector('.pj-logo')).map(c => {
+  const t = c.querySelector('.st-title, .fr-title'), logo = c.querySelector('.pj-logo').getBoundingClientRect(), r = document.createRange(), rects = [];
+  const walk = document.createTreeWalker(t, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement.closest('.vh, .go') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  for (let n; (n = walk.nextNode());) { r.selectNodeContents(n); rects.push(...[...r.getClientRects()].filter(x => x.width > 0)); }
+  const top = Math.min(...rects.map(x => x.top)), bottom = Math.max(...rects.map(x => x.bottom));
+  return { card: c.getAttribute('href'), kind: c.classList[0], lines: new Set(rects.map(x => Math.round(x.top))).size, dy: (top + bottom) / 2 - (logo.top + logo.bottom) / 2 };
+})"""
+async def title_logo_check(browser, base):
+    """A one-line project title sits on its logo tile's middle, as it did when the title was a centred flex row: made
+    plain text for its arrow (title_arrow_check), it rose to the top of the tile's row, 9px high at 1440 and 17.5px at
+    768. Desk stack and phone cards, from 2560 to 320."""
+    problems = []
+    for vw in (2560, 1440, 1024, 768, 721, 720, 390, 320):
+        ctx = await browser.new_context(viewport={'width': vw, 'height': 900}, is_mobile=vw < 721, has_touch=vw < 721, reduced_motion='reduce'); pg = await ctx.new_page()
+        for path in ['/', '/projects/']:
+            await pg.goto(base + path); await pg.evaluate('document.fonts.ready')
+            for x in await pg.evaluate(TITLE_LOGO):
+                if x['lines'] == 1 and abs(x['dy']) > 2: problems.append(f"title logo {vw}px {path} {x['kind']} {x['card']}: the title is {x['dy']:+.1f}px off its logo's middle")
+        await ctx.close()
+    return problems
+
 async def run(base, label):
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -527,7 +548,7 @@ async def run(base, label):
         await page.goto(base + '/projects/', wait_until='networkidle')
         paths = ['/', '/projects/'] + sorted({await a.get_attribute('href') for a in await page.query_selector_all('.fr-card')}) + ['/about/', '/resume/', '/contact/', '/404.html']
         await ctx.close()
-        fails = [f'{label}: {p}' for p in hex_shape(base)] + [f'{label} {p}' for p in await tokens_check(b, base)] + [f'{label} {p}' for p in await hero_check(b, base)] + [f'{label} {p}' for p in await grid_check(b, base)] + [f'{label} {p}' for p in await mobile_check(b, base)] + [f'{label} {p}' for p in await stack_check(b, base)] + [f'{label} {p}' for p in await order_check(b, base)] + [f'{label} {p}' for p in await carousel_focus_check(b, base)] + [f'{label} {p}' for p in await title_arrow_check(b, base)] + [f'{label} {p}' for p in await card_fit_check(b, base)]
+        fails = [f'{label}: {p}' for p in hex_shape(base)] + [f'{label} {p}' for p in await tokens_check(b, base)] + [f'{label} {p}' for p in await hero_check(b, base)] + [f'{label} {p}' for p in await grid_check(b, base)] + [f'{label} {p}' for p in await mobile_check(b, base)] + [f'{label} {p}' for p in await stack_check(b, base)] + [f'{label} {p}' for p in await order_check(b, base)] + [f'{label} {p}' for p in await carousel_focus_check(b, base)] + [f'{label} {p}' for p in await title_arrow_check(b, base)] + [f'{label} {p}' for p in await title_logo_check(b, base)] + [f'{label} {p}' for p in await card_fit_check(b, base)]
         for vw, vh in [(1440, 900), (390, 844), (320, 640)]:
             ctx = await b.new_context(viewport={'width': vw, 'height': vh})
             page = await ctx.new_page()

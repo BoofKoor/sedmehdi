@@ -631,7 +631,7 @@ a, button { -webkit-tap-highlight-color: transparent; }
 .st-text > :not(.pj-logo, .st-title) { grid-column: 1 / -1; }
 .st-text .pj-logo { grid-row: 2; width: 72px; height: 72px; border-radius: 19px; padding: 12px; }
 .st-text .st-num { grid-row: 1; }
-.st-text .st-title { grid-row: 2; }
+.st-text .st-title { grid-row: 2; align-self: center; }  /* a one-line title on its tile's middle, as when the title was a centred flex row */
 
 /* chips on the project cards: the cards are always dark, so in both themes the chips are a darker inset pill with white
    text, and the brand icons take their dark-theme colours (in light theme they were white on white, 1.00:1) */
