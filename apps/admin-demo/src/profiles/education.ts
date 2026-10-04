@@ -81,6 +81,7 @@ export const education: BusinessProfile = {
   },
   streams: {
     video: { from: "primary", ratio: 0.21, noise: 0.06 },
+    certificates: { from: "secondary", ratio: 0.41, noise: 0.14 },
   },
   perActive: { day: 2.4, d7: 7.6, d90: 46 },
   copy: {
@@ -100,6 +101,7 @@ export const education: BusinessProfile = {
       upIsGood: true,
       value: (s) => ({ value: s.cur("primary") / Math.max(1, s.active), previous: s.prev("primary") / Math.max(1, s.prevActive) }),
     },
+    { id: "certificates", label: L("Certificates issued, {days} days", "گواهی‌های صادرشده، {days} روز"), format: "number", upIsGood: true, value: (s) => ({ value: s.cur("certificates"), previous: s.prev("certificates") }) },
   ],
   radar: [
     { label: L("Completion", "تکمیل دوره"), full: L("Students who finished their course", "دانشجویانی که دوره را تمام کردند"), base: 58, spread: 5 },

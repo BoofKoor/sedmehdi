@@ -60,6 +60,7 @@ export const print: BusinessProfile = {
     items: { from: "primary", ratio: 142, noise: 0.12 },
     turnaround: { from: "primary", ratio: 19.4, noise: 0.09, kind: "level" },
     parcels: { from: "primary", ratio: 0.93, noise: 0.05 },
+    revenue: { from: "primary", ratio: 38.5, noise: 0.08 },
   },
   perActive: { day: 1.1, d7: 1.3, d90: 2.6 },
   copy: {
@@ -73,6 +74,7 @@ export const print: BusinessProfile = {
     { id: "jobs", label: L("Jobs, {days} days", "سفارش‌ها، {days} روز"), format: "number", upIsGood: true, value: (s) => ({ value: s.cur("primary"), previous: s.prev("primary") }) },
     { id: "items", label: L("Items printed, {days} days", "اقلام چاپ‌شده، {days} روز"), format: "compact", upIsGood: true, value: (s) => ({ value: s.cur("items"), previous: s.prev("items") }) },
     { id: "turnaround", label: L("Average turnaround", "میانگین زمان تحویل"), format: "hours", upIsGood: false, value: (s) => ({ value: s.cur("turnaround"), previous: s.prev("turnaround") }) },
+    { id: "revenue", label: L("Revenue, {days} days", "درآمد، {days} روز"), format: "money", upIsGood: true, value: (s) => ({ value: s.cur("revenue"), previous: s.prev("revenue") }) },
   ],
   radar: [
     { label: L("On-time dispatch", "ارسال به‌موقع"), full: L("Jobs posted by the promised day", "سفارش‌هایی که تا روز وعده‌داده پست شدند"), base: 88, spread: 4 },

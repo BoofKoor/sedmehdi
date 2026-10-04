@@ -15,6 +15,8 @@ export interface KpiOut {
   label: L;
   format: MetricFormat;
   upIsGood: boolean;
+  /** The hero tile's period ("allTime" or "now"); the windowed tiles name theirs in the label. */
+  scope: "allTime" | "now";
   value: number;
   previous: number | null;
   /** null when there is no baseline to compare with. */
@@ -77,7 +79,7 @@ const pct = (cur: number, prev: number | null) =>
   prev == null || prev === 0 || !Number.isFinite(prev) ? null : ((cur - prev) / prev) * 100;
 
 function kpiOut(def: KpiDef, value: number, previous: number | null): KpiOut {
-  return { id: def.id, label: def.label, format: def.format, upIsGood: def.upIsGood, value, previous, deltaPct: pct(value, previous) };
+  return { id: def.id, label: def.label, format: def.format, upIsGood: def.upIsGood, scope: def.scope ?? "allTime", value, previous, deltaPct: pct(value, previous) };
 }
 
 /** Weights that drift a little from window to window (deterministic for a given date and range). */
@@ -130,12 +132,13 @@ export function buildDashboard(p: BusinessProfile, range: number, now: Date, emp
   const days = windowDays(p, range, now).map((d) => (empty ? { ...d, primary: 0, secondary: 0 } : d));
   const stats = windowStats(p, range, now);
 
-  // KPI tiles: the hero (an all-time figure with its sparkline) and three windowed ones.
+  // KPI tiles: the hero (a running total or a level, with its sparkline) and four windowed ones.
   const [heroDef, ...rest] = p.kpis;
   const heroValue = empty ? 0 : heroDef.value(stats).value;
+  const sparkStream = p.spark ?? "secondary";
   const sparkDays = Array.from({ length: 7 }, (_, i) => today - 7 + i);
-  const sparkValues = sparkDays.map((d) => (empty ? 0 : fullDay(p, "secondary", d)));
-  const prevSpark = Array.from({ length: 7 }, (_, i) => (empty ? 0 : fullDay(p, "secondary", today - 14 + i)));
+  const sparkValues = sparkDays.map((d) => (empty ? 0 : fullDay(p, sparkStream, d)));
+  const prevSpark = Array.from({ length: 7 }, (_, i) => (empty ? 0 : fullDay(p, sparkStream, today - 14 + i)));
   const peak = sparkValues.reduce((best, v, i) => (v > sparkValues[best] ? i : best), 0);
   const sparkSum = sparkValues.reduce((a, b) => a + b, 0);
   const prevSum = prevSpark.reduce((a, b) => a + b, 0);
@@ -145,14 +148,15 @@ export function buildDashboard(p: BusinessProfile, range: number, now: Date, emp
     return kpiOut(def, v.value, v.previous);
   });
 
-  // Key rates: each drifts around its typical value, a little less over longer windows.
+  // Key rates: each drifts around its typical value, a little less over longer windows. The ceiling
+  // is 99.9, not 99: a rate that lives above 99 (an uptime SLA met) must not be clipped flat.
   const rates: RateOut[] = p.radar.map((def, i) => {
     if (empty) return { label: def.label, full: def.full, value: null, previous: null };
     const s = (p.seed ^ hash32(`rate:${i}`)) >>> 0;
     const at = (end: number) => {
       const wob = 0.7 * valueNoise(s, end, 13) + 0.3 * valueNoise(s + 5, end, 4);
       const v = def.base + def.spread * wob * Math.sqrt(14 / range);
-      return Math.round(Math.min(99, Math.max(1, v)) * 10) / 10;
+      return Math.round(Math.min(99.9, Math.max(1, v)) * 10) / 10;
     };
     return { label: def.label, full: def.full, value: at(today), previous: at(today - range) };
   });
@@ -169,14 +173,18 @@ export function buildDashboard(p: BusinessProfile, range: number, now: Date, emp
     return { label: top.label, unit: top.unit, scope: top.scope, headline: lead.name, value: Math.round(volume * top.share * lead.share), mono: top.mono };
   });
 
-  // Live statistics, as of `now` (the ticker moves them from here).
+  // Live statistics, as of `now` (the ticker moves them from here). People online follow the hour
+  // of the day; a steady population (servers) does not.
   const week = windowStats(p, 7, now);
   const hourWeight = p.hours[now.getHours()] / Math.max(...p.hours);
+  const onlineDef = p.live.online;
+  const onlineOf = onlineDef.of ? Math.round(onlineDef.of(week)) : week.active;
+  const todayStream = p.live.today.stream ?? "secondary";
   const live = {
-    online: empty ? 0 : Math.round(week.active * p.live.online.share * (0.35 + 0.65 * hourWeight)),
-    onlineOf: empty ? 0 : week.active,
-    today: empty ? 0 : dayValue(p, "secondary", today, today, fr),
-    todayOf: empty ? 0 : windowSum(p, "secondary", today, 7, fr),
+    online: empty ? 0 : Math.round(onlineOf * onlineDef.share * (onlineDef.steady ? 1 : 0.35 + 0.65 * hourWeight)),
+    onlineOf: empty ? 0 : onlineOf,
+    today: empty ? 0 : dayValue(p, todayStream, today, today, fr),
+    todayOf: empty ? 0 : windowSum(p, todayStream, today, 7, fr),
     lifetime: empty
       ? 0
       : (p.live.lifetime.window

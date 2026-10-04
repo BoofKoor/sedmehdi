@@ -31,7 +31,7 @@ export const UI = {
   "biz.label": { en: "Business", fa: "کسب‌وکار" },
   "biz.aria": { en: "Business: {brand}. Switch business", fa: "کسب‌وکار: {brand}. تغییر کسب‌وکار" },
   "biz.list": { en: "Choose a business", fa: "یک کسب‌وکار انتخاب کنید" },
-  "biz.hint": { en: "One admin kit, five businesses: brand, navigation, metrics and copy all come from one config.", fa: "یک پنل، پنج کسب‌وکار: برند، منو، شاخص‌ها و متن‌ها همه از یک پیکربندی می‌آیند." },
+  "biz.hint": { en: "One admin kit, five businesses: brand, navigation, metrics and copy all come from one profile.", fa: "یک پنل، پنج کسب‌وکار: برند، منو، شاخص‌ها و متن‌ها همه از یک پروفایل می‌آیند." },
   "biz.switched": { en: "Now showing {brand}, {kind}", fa: "اکنون: {brand}، {kind}" },
 
   // demo menu
@@ -118,6 +118,7 @@ export const UI = {
   "dash.delta.down": { en: "down", fa: "کاهش" },
   "dash.scope.range": { en: "{n} days", fa: "{n} روز" },
   "dash.scope.allTime": { en: "all time", fa: "از ابتدا" },
+  "dash.scope.now": { en: "now", fa: "اکنون" },
   "dash.peakHour": { en: "Peak hour", fa: "ساعت اوج" },
   "dash.side.rates": { en: "Key rates", fa: "نرخ‌های کلیدی" },
   "dash.side.live": { en: "Live statistics", fa: "آمار زنده" },

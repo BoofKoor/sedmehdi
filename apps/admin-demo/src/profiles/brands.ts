@@ -9,10 +9,10 @@
  * straight from Node to derive each business's colours from `accent`.
  */
 
-export type ProfileId = "vpn" | "saas" | "ecommerce" | "education" | "print";
+export type ProfileId = "hosting" | "saas" | "ecommerce" | "education" | "print";
 
 /** The order of the Business picker, the command palette and the QA matrix. */
-export const PROFILE_IDS: readonly ProfileId[] = ["vpn", "saas", "ecommerce", "education", "print"];
+export const PROFILE_IDS: readonly ProfileId[] = ["hosting", "saas", "ecommerce", "education", "print"];
 
 export interface BrandAccent {
   /** OKLCH hue of the brand colour, in degrees. */
@@ -36,12 +36,13 @@ export interface Brand {
 }
 
 export const BRANDS: Record<ProfileId, Brand> = {
-  vpn: {
-    id: "vpn",
-    name: "Passway",
-    kind: { en: "VPN service", fa: "سرویس VPN" },
-    // A shield with a forward chevron cut out of it.
-    mark: "M16 2.5L27.5 6.5V15C27.5 22.2 22.6 27.4 16 29.5C9.4 27.4 4.5 22.2 4.5 15V6.5ZM12.4 10.4L15 8.7L22.1 16L15 23.3L12.4 21.6L17.9 16Z",
+  hosting: {
+    id: "hosting",
+    name: "Nodemill",
+    kind: { en: "Cloud & VPS hosting", fa: "سرور مجازی و ابری" },
+    // Three server slabs, each with its light and a drive slot cut out.
+    mark: "M6.2 4.5H25.8A2.2 2.2 0 0 1 28 6.7V8.8A2.2 2.2 0 0 1 25.8 11H6.2A2.2 2.2 0 0 1 4 8.8V6.7A2.2 2.2 0 0 1 6.2 4.5ZM8.75 6.3A1.45 1.45 0 1 0 8.75 9.2A1.45 1.45 0 1 0 8.75 6.3ZM14 7H23A0.75 0.75 0 0 1 23.75 7.75V7.75A0.75 0.75 0 0 1 23 8.5H14A0.75 0.75 0 0 1 13.25 7.75V7.75A0.75 0.75 0 0 1 14 7ZM6.2 12.75H25.8A2.2 2.2 0 0 1 28 14.95V17.05A2.2 2.2 0 0 1 25.8 19.25H6.2A2.2 2.2 0 0 1 4 17.05V14.95A2.2 2.2 0 0 1 6.2 12.75ZM8.75 14.55A1.45 1.45 0 1 0 8.75 17.45A1.45 1.45 0 1 0 8.75 14.55ZM14 15.25H23A0.75 0.75 0 0 1 23.75 16V16A0.75 0.75 0 0 1 23 16.75H14A0.75 0.75 0 0 1 13.25 16V16A0.75 0.75 0 0 1 14 15.25ZM6.2 21H25.8A2.2 2.2 0 0 1 28 23.2V25.3A2.2 2.2 0 0 1 25.8 27.5H6.2A2.2 2.2 0 0 1 4 25.3V23.2A2.2 2.2 0 0 1 6.2 21ZM8.75 22.8A1.45 1.45 0 1 0 8.75 25.7A1.45 1.45 0 1 0 8.75 22.8ZM14 23.5H23A0.75 0.75 0 0 1 23.75 24.25V24.25A0.75 0.75 0 0 1 23 25H14A0.75 0.75 0 0 1 13.25 24.25V24.25A0.75 0.75 0 0 1 14 23.5Z",
+    // The original panel's indigo: the demo opens on this business, so it opens in the panel's own colours.
     accent: { hue: 273, chroma: 0.2, tint: 1, series2Hue: 65 },
   },
   saas: {
@@ -81,4 +82,18 @@ export const BRANDS: Record<ProfileId, Brand> = {
 /** `?profile=` and the stored choice are only honoured when they name a real business. */
 export function isProfileId(v: unknown): v is ProfileId {
   return typeof v === "string" && (PROFILE_IDS as readonly string[]).includes(v);
+}
+
+/**
+ * Business ids the demo no longer has, and the one that took each one's place. Links and browsers
+ * from before still carry them: the first default business was replaced by the hosting one, so its id
+ * opens hosting instead of falling back to whatever the default is. index.html's pre-paint script
+ * keeps the same map (a unit test holds the two together).
+ */
+export const LEGACY_PROFILES: Readonly<Record<string, ProfileId>> = { vpn: "hosting" };
+
+/** A requested business id, with an old id mapped to its replacement; null when it names none. */
+export function resolveProfileId(v: unknown): ProfileId | null {
+  if (isProfileId(v)) return v;
+  return typeof v === "string" && Object.prototype.hasOwnProperty.call(LEGACY_PROFILES, v) ? LEGACY_PROFILES[v] : null;
 }

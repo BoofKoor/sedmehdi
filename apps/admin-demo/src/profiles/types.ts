@@ -17,7 +17,7 @@ export type MetricFormat = "number" | "compact" | "money" | "percent" | "hours" 
 /** Seven multipliers indexed by `Date#getDay()` (0 = Sunday): the business's weekly rhythm. */
 export type WeekRhythm = [number, number, number, number, number, number, number];
 
-/** A daily count the business produces (orders, lessons, configs issued, new customers…). */
+/** A daily count the business produces (orders, lessons, servers delivered, new customers…). */
 export interface SeriesDef {
   /** What one unit is, plural: "Orders" / «سفارش‌ها». */
   label: L;
@@ -33,7 +33,7 @@ export interface SeriesDef {
 
 /**
  * A daily stream derived from a series: revenue from orders, items printed from jobs, paid
- * conversions from trials. `level` streams are averages (a turnaround time), not sums.
+ * conversions from sign-ups. `level` streams are averages (a turnaround time, a price), not sums.
  */
 export interface StreamDef {
   from: "primary" | "secondary";
@@ -53,6 +53,12 @@ export interface WindowStats {
   prevActive: number;
   /** Everything up to today, since the business started: the hero tile's figure. */
   total: number;
+  /**
+   * A stream summed from launch to now (`back` = 0), or to the end of the window `back` windows
+   * earlier, cut at the same hour. So `life(s) - life(s, 1)` is exactly `cur(s)`: a level read from
+   * lifetimes (servers running, customers kept) moves by what the window's own figures say.
+   */
+  life(stream: string, back?: number): number;
 }
 
 export interface KpiValue {
@@ -68,6 +74,11 @@ export interface KpiDef {
   format: MetricFormat;
   /** false for figures where a rise is bad news: churn, turnaround time. */
   upIsGood: boolean;
+  /**
+   * The hero tile's period: "allTime" for a running total (customers ever), "now" for a level read
+   * at this moment (servers running). Unused on the windowed tiles, whose label names the window.
+   */
+  scope?: "allTime" | "now";
   value(s: WindowStats): KpiValue;
 }
 
@@ -94,8 +105,14 @@ export interface TopDef {
 }
 
 export interface LiveDef {
-  online: { label: L; ofLabel: L; share: number };
-  today: { label: L; ofLabel: L };
+  /**
+   * Who (or what) is online, out of `of` (default: the people active this week), at `share` of it.
+   * People follow the hour of the day; `steady` things (servers) do not. `jitter`: how far one tick
+   * of the live ticker moves the figure, as a fraction of it (default 0.03).
+   */
+  online: { label: L; ofLabel: L; share: number; of?: (s: WindowStats) => number; steady?: boolean; jitter?: number };
+  /** Today's count of a stream (default: the secondary series), out of this week's. */
+  today: { label: L; ofLabel: L; stream?: string };
   /** A running total of a stream since launch, or over the last `window` days when given. */
   lifetime: { label: L; sub: L; stream: string; format: MetricFormat; scale?: number; window?: number };
 }
@@ -181,7 +198,7 @@ export interface EntityDef {
   /**
    * The record dialog's 30-day trend: what is counted per day. It prints a 30-day total beside the
    * record's own columns, so it must agree with them: `total` names a lifetime count it may not
-   * exceed (a user's configs), `cap` a ceiling no day may pass (an account's seats), `per` a column
+   * exceed (a customer's orders), `cap` a ceiling no day may pass (an account's seats), `per` a column
    * the daily level scales with (`base` per 100 of it: a course's students). Left out for one-off
    * records, which have a `story` instead.
    */
@@ -233,6 +250,9 @@ export interface BusinessProfile {
   /** How many primary units an active person produces in a day, and in a 7- and a 90-day window. */
   perActive: { day: number; d7: number; d90: number };
 
+  /** The stream the hero tile's sparkline counts per day (default: the secondary series). */
+  spark?: string;
+
   copy: {
     /** The overview chart's title and caption. */
     chartTitle: L;
@@ -243,7 +263,8 @@ export interface BusinessProfile {
     health: L;
   };
 
-  kpis: [KpiDef, KpiDef, KpiDef, KpiDef];
+  /** The hero tile (a level or running total, with its sparkline) and four windowed tiles. */
+  kpis: [KpiDef, KpiDef, KpiDef, KpiDef, KpiDef];
   radar: [RateDef, RateDef, RateDef, RateDef];
   tops: [TopDef, TopDef, TopDef];
   live: LiveDef;

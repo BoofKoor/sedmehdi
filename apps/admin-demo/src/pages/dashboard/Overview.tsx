@@ -67,15 +67,17 @@ function KpiBand({ p, d }: { p: BusinessProfile; d?: DashboardData }) {
   const days = d?.range ?? range;
   const label = (l: L) => tl(l, { days: formatNumber(days) });
   return (
-    <section aria-label={t("dash.kpis")} className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-[1.22fr_repeat(3,1fr)]" data-testid="kpis">
-      <div className="flex min-w-0 flex-col rounded-card bg-hero p-4 pb-2 text-white shadow-hero" data-kpi={p.kpis[0].id}>
+    // The hero spans two rows beside the four windowed tiles (two by two on a desk, one beside it and
+    // two under it on a tablet), so five figures take the band the original four did.
+    <section aria-label={t("dash.kpis")} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.22fr_1fr_1fr]" data-testid="kpis">
+      <div className="flex min-w-0 flex-col rounded-card bg-hero p-4 pb-2 text-white shadow-hero sm:row-span-2" data-kpi={p.kpis[0].id}>
         {d ? (
           <>
             <div className="text-[2rem] font-bold leading-[1.1] tracking-[-0.025em]">
               <CountUp value={d.hero.kpi.value} format={(n) => formatMetric(n, d.hero.kpi.format, p.currency)} />
             </div>
             <div className="mt-1.5 text-[10px] font-medium uppercase leading-[1.5] tracking-[0.085em] text-white">
-              {label(d.hero.kpi.label)} · {t("dash.scope.allTime")}
+              {label(d.hero.kpi.label)} · {t(d.hero.kpi.scope === "now" ? "dash.scope.now" : "dash.scope.allTime")}
             </div>
             {d.empty ? (
               <div className="mt-auto pt-3 text-xs text-white">{t("state.empty")}</div>

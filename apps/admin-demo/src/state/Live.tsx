@@ -86,6 +86,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   }, [p, empty, epoch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const seed = (p.seed ^ hash32("live")) >>> 0;
+  // How far one tick moves the online figure: people come and go by the percent, servers by the unit.
+  const jitter = p.live.online.jitter ?? 0.03;
 
   const initial = useMemo((): LiveState => {
     const history: Record<string, number[]> = { online: [] };
@@ -97,7 +99,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       for (let k = -HISTORY; k < 0; k++) series.push((prev = step(def, base.readings[def.id], prev, seed + hash32(def.id), k)));
       history[def.id] = series;
     }
-    for (let k = -HISTORY; k < 0; k++) history.online.push(Math.round(base.live.online * (1 + 0.05 * (unit(seed, k) * 2 - 1))));
+    for (let k = -HISTORY; k < 0; k++) history.online.push(Math.round(base.live.online * (1 + ((jitter * 5) / 3) * (unit(seed, k) * 2 - 1))));
     return {
       status: "running",
       ...base.live,
@@ -106,7 +108,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       resources: { cpu: 34 + Math.round(unit(seed, 3) * 16), memory: 58 + Math.round(unit(seed, 4) * 8), disk: 41 + Math.round(unit(seed, 5) * 12) },
       updatedAt: new Date(),
     };
-  }, [base, p.health, seed]);
+  }, [base, p.health, seed, jitter]);
 
   // The readings belong to one business (and one reset): keyed, so the render that switches business
   // already shows the new one's figures instead of the old readings under the new service names.
@@ -136,7 +138,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
           }
           // Online: a random walk pulled back towards the generator's figure for this hour.
           const target = base.live.online;
-          const drift = (unit(seed, k) * 2 - 1) * Math.max(1, target * 0.03);
+          const drift = (unit(seed, k) * 2 - 1) * Math.max(1, target * jitter);
           const online = empty ? 0 : Math.max(0, Math.round(s.online + drift + (target - s.online) * 0.25));
           history.online = [...s.history.online, online].slice(-HISTORY);
           const cpu = Math.round(Math.min(92, Math.max(12, s.resources.cpu + (unit(seed + 2, k) * 2 - 1) * 6)));
@@ -150,7 +152,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     };
     schedule();
     return () => window.clearTimeout(id);
-  }, [running, p.health, base, seed, empty, key, initial]);
+  }, [running, p.health, base, seed, jitter, empty, key, initial]);
 
   const status: LiveStatus = still ? "still" : visible ? "running" : "paused";
   const value = useMemo(() => ({ ...current, status }), [current, status]);

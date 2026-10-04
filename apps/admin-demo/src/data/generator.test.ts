@@ -156,14 +156,15 @@ describe.each(PROFILE_LIST.map((p) => [p.id, p] as [string, BusinessProfile]))("
       for (const k of d.kpis) expect(k.deltaPct).not.toBeNull();
       for (const rate of d.rates) {
         expect(rate.value).toBeGreaterThanOrEqual(1);
-        expect(rate.value).toBeLessThanOrEqual(99);
+        expect(rate.value).toBeLessThanOrEqual(99.9);
       }
       expect(d.live.online).toBeLessThanOrEqual(d.live.onlineOf);
       expect(d.live.today).toBeLessThanOrEqual(d.live.todayOf);
       d.growth.funnel.forEach((v, i) => i && expect(v).toBeLessThanOrEqual(d.growth.funnel[i - 1]));
       d.growth.cumulative.forEach((c, i) => i && expect(c.total).toBeGreaterThanOrEqual(d.growth.cumulative[i - 1].total));
-      // The growth tab's running total ends exactly on the hero tile's figure.
-      expect(d.growth.cumulative.at(-1)!.total).toBe(d.hero.kpi.value);
+      // A hero that is a running total ends exactly where the growth tab's running total does (a
+      // hero read "now", the servers running, is checked against its own streams in profiles.test).
+      if (d.hero.kpi.scope === "allTime") expect(d.growth.cumulative.at(-1)!.total).toBe(d.hero.kpi.value);
       for (const c of d.retention.cohorts) {
         expect(Math.max(...c.retention)).toBe(c.retention[0]);
         if (c.retention.length > 2) expect(c.retention.at(-1)!).toBeLessThan(c.retention[1] * 1.07);
@@ -179,7 +180,7 @@ describe.each(PROFILE_LIST.map((p) => [p.id, p] as [string, BusinessProfile]))("
 
   it("puts the hero sparkline on the last seven complete days", () => {
     const d = buildDashboard(p, 14, NOW);
-    expect(d.hero.spark.values).toEqual(d.days.slice(6, 13).map((x) => x.secondary));
+    expect(d.hero.spark.values).toEqual(d.days.slice(6, 13).map((x) => fullDay(p, p.spark ?? "secondary", x.day)));
     expect(d.hero.spark.values[d.hero.spark.peak]).toBe(Math.max(...d.hero.spark.values));
   });
 

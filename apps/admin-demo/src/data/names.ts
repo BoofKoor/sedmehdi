@@ -66,8 +66,8 @@ export const COMPANIES = [
 
 const pair = (en: string, fa: string): L => ({ en, fa });
 
-/** Server locations for a VPN service. */
-export const SERVER_CITIES: { name: L; code: string }[] = [
+/** Datacenter cities of a hosting business, with the airport-style code its server names use. */
+export const DATACENTERS: { name: L; code: string }[] = [
   { name: pair("Frankfurt", "فرانکفورت"), code: "FRA" },
   { name: pair("Amsterdam", "آمستردام"), code: "AMS" },
   { name: pair("Helsinki", "هلسینکی"), code: "HEL" },

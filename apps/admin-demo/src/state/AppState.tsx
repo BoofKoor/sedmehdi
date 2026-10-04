@@ -12,7 +12,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { dirFor, setCurrentLocale, type Locale } from "@/i18n";
-import { isProfileId, PROFILES, type BusinessProfile, type ProfileId } from "@/profiles";
+import { PROFILES, resolveProfileId, type BusinessProfile, type ProfileId } from "@/profiles";
 
 import { KEYS, readKey, writeKey } from "./storage";
 
@@ -20,7 +20,7 @@ export type Theme = "light" | "dark";
 export type DataMode = "live" | "empty" | "error" | "slow";
 export const RANGES = [7, 14, 30, 90] as const;
 export type Range = (typeof RANGES)[number];
-export const DEFAULTS = { profile: "vpn" as ProfileId, locale: "en" as Locale, range: 14 as Range };
+export const DEFAULTS = { profile: "hosting" as ProfileId, locale: "en" as Locale, range: 14 as Range };
 
 export const isRange = (n: unknown): n is Range => (RANGES as readonly unknown[]).includes(n);
 
@@ -75,7 +75,7 @@ function applyLocale(locale: Locale) {
 function readInitial() {
   const r = root();
   const q = new URLSearchParams(location.search);
-  const profile: ProfileId = isProfileId(r.dataset.profile) ? r.dataset.profile : DEFAULTS.profile;
+  const profile: ProfileId = resolveProfileId(r.dataset.profile) ?? DEFAULTS.profile;
   const locale: Locale = r.lang === "fa" ? "fa" : "en";
   const theme: Theme = r.dataset.theme === "dark" ? "dark" : "light";
   const savedRange = Number(readKey(KEYS.range));

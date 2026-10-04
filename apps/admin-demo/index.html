@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" dir="ltr" data-profile="vpn" data-theme="light">
+<html lang="en" dir="ltr" data-profile="hosting" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -18,9 +18,11 @@
       // (`sm-theme`), so the site and the demo are one theme; `?theme=` applies without saving.
       (function () {
         var d = document.documentElement, q = new URLSearchParams(location.search);
-        var ids = ["vpn", "saas", "ecommerce", "education", "print"];
+        // The businesses, and old ids mapped to the one that replaced them (src/profiles/brands.ts).
+        var ids = ["hosting", "saas", "ecommerce", "education", "print"], legacy = { vpn: "hosting" };
         function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-        var p = q.get("profile"); if (ids.indexOf(p) < 0) p = get("sm-admin-profile"); if (ids.indexOf(p) < 0) p = "vpn";
+        function known(v) { return legacy.hasOwnProperty(v) ? legacy[v] : ids.indexOf(v) < 0 ? null : v; }
+        var p = known(q.get("profile")) || known(get("sm-admin-profile")) || "hosting";
         var l = q.get("lang"); if (l !== "fa" && l !== "en") l = get("sm-admin-lang"); if (l !== "fa" && l !== "en") l = "en";
         var t = q.get("theme"); if (t !== "light" && t !== "dark") t = get("sm-theme");
         if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";

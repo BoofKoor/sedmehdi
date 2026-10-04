@@ -72,6 +72,7 @@ export const ecommerce: BusinessProfile = {
   },
   streams: {
     revenue: { from: "primary", ratio: 67.4, noise: 0.07 },
+    refunds: { from: "primary", ratio: 0.031, noise: 0.22 },
   },
   perActive: { day: 1.04, d7: 1.12, d90: 1.9 },
   copy: {
@@ -90,6 +91,13 @@ export const ecommerce: BusinessProfile = {
       format: "money",
       upIsGood: true,
       value: (s) => ({ value: s.cur("revenue") / Math.max(1, s.cur("primary")), previous: s.prev("revenue") / Math.max(1, s.prev("primary")) }),
+    },
+    {
+      id: "refunds",
+      label: L("Refund rate, {days} days", "نرخ مرجوعی، {days} روز"),
+      format: "percent",
+      upIsGood: false,
+      value: (s) => ({ value: (s.cur("refunds") / Math.max(1, s.cur("primary"))) * 100, previous: (s.prev("refunds") / Math.max(1, s.prev("primary"))) * 100 }),
     },
   ],
   radar: [

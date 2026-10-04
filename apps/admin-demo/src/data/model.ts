@@ -162,12 +162,22 @@ export function windowStats(p: BusinessProfile, range: number, now: Date): Windo
   // more or less), so a "per active user" figure moves instead of echoing the model's constant.
   const s = (p.seed ^ hash32("perActive")) >>> 0;
   const k = (end: number) => perActive(p, range) * (1 + 0.06 * valueNoise(s, end, 17) + 0.02 * valueNoise(s + 1, end, 5));
+  // Lifetimes up to now, and up to the end of each earlier window: the window sums peeled off the
+  // running total, so a level read from them agrees with the windowed figures to the unit.
+  const lives = new Map<string, number>();
+  const life = (stream: string, back = 0) => {
+    let v = lives.get(stream);
+    if (v === undefined) lives.set(stream, (v = lifetime(p, stream, now)));
+    for (let k = 0; k < back; k++) v -= windowSum(p, stream, today - k * range, range, fr);
+    return v;
+  };
   return {
     days: range,
     cur,
     prev,
     active: Math.round(cur("primary") / k(today)),
     prevActive: Math.round(prev("primary") / k(today - range)),
-    total: lifetime(p, "secondary", now),
+    total: life("secondary"),
+    life,
   };
 }

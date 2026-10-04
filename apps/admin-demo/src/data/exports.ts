@@ -31,7 +31,7 @@ export function dashboardCsv(p: BusinessProfile, d: DashboardData, tab: DashTab)
 
   if (tab === "overview") {
     const kpi = t("csv.kpi");
-    add(kpi, tl(d.hero.kpi.label, days), null, null, rawMetric(d.hero.kpi.value), null, null, t("dash.scope.allTime"));
+    add(kpi, tl(d.hero.kpi.label, days), null, null, rawMetric(d.hero.kpi.value), null, null, t(d.hero.kpi.scope === "now" ? "dash.scope.now" : "dash.scope.allTime"));
     for (const k of d.kpis) add(kpi, tl(k.label, days), null, null, rawMetric(k.value), k.previous == null ? null : rawMetric(k.previous), pct(k.deltaPct));
     const daily = t("csv.daily");
     for (const day of d.days) {

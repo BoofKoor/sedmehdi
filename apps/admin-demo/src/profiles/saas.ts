@@ -1,4 +1,4 @@
-/** Loopdesk, a team-workspace SaaS: trials, activation, paid conversions and churn. */
+/** Loopdesk, a team-workspace SaaS: sign-ups, activation, paid conversions and churn. */
 import { g } from "@/data/gen";
 import { REGIONS } from "@/data/names";
 
@@ -15,7 +15,7 @@ const PLANS = [
 ];
 
 const ACCOUNT_STATUS = [
-  { id: "trial", label: L("Trial", "آزمایشی"), tone: "info" as const, weight: 18 },
+  { id: "onboarding", label: L("Onboarding", "در حال راه‌اندازی"), tone: "info" as const, weight: 18 },
   { id: "active", label: L("Active", "فعال"), tone: "success" as const, weight: 64 },
   { id: "pastdue", label: L("Past due", "معوق"), tone: "warning" as const, weight: 8 },
   { id: "churned", label: L("Churned", "لغو شده"), tone: "neutral" as const, weight: 10 },
@@ -57,7 +57,7 @@ export const saas: BusinessProfile = {
   hours: [1, 0.7, 0.5, 0.5, 0.6, 1, 2.2, 4.5, 7.5, 9.6, 10.2, 10, 9, 9.4, 9.8, 9.6, 8.8, 7, 5, 4, 3.4, 2.8, 2, 1.4],
   series: {
     primary: { label: L("Active users", "کاربران فعال"), unit: L("users", "کاربر"), base: 3380, growth: 0.48, noise: 0.05 },
-    secondary: { label: L("New trials", "دوره‌های آزمایشی جدید"), unit: L("trials", "دورهٔ آزمایشی"), base: 39, growth: 0.32, noise: 0.16 },
+    secondary: { label: L("New sign-ups", "ثبت‌نام‌های جدید"), unit: L("sign-ups", "ثبت‌نام"), base: 39, growth: 0.32, noise: 0.16 },
   },
   streams: {
     conversions: { from: "secondary", ratio: 0.19, noise: 0.22 },
@@ -67,8 +67,8 @@ export const saas: BusinessProfile = {
   perActive: { day: 1, d7: 3.1, d90: 19 },
   copy: {
     chartTitle: L("Activity overview", "نمای کلی فعالیت"),
-    chartSub: L("Daily active users and new trials over the selected range", "کاربران فعال روزانه و دوره‌های آزمایشی جدید در بازهٔ انتخابی"),
-    sparkMetric: L("New trials", "دوره‌های آزمایشی جدید"),
+    chartSub: L("Daily active users and new sign-ups over the selected range", "کاربران فعال روزانه و ثبت‌نام‌های جدید در بازهٔ انتخابی"),
+    sparkMetric: L("New sign-ups", "ثبت‌نام‌های جدید"),
     health: L("Platform health", "سلامت پلتفرم"),
   },
   kpis: [
@@ -76,9 +76,21 @@ export const saas: BusinessProfile = {
     { id: "active", label: L("Active users, {days} days", "کاربران فعال، {days} روز"), format: "number", upIsGood: true, value: (s) => ({ value: s.active, previous: s.prevActive }) },
     { id: "paid", label: L("Paid conversions, {days} days", "تبدیل به اشتراک پولی، {days} روز"), format: "number", upIsGood: true, value: (s) => ({ value: s.cur("conversions"), previous: s.prev("conversions") }) },
     { id: "churn", label: L("Churned workspaces, {days} days", "فضاهای کاری لغوشده، {days} روز"), format: "number", upIsGood: false, value: (s) => ({ value: s.cur("churn"), previous: s.prev("churn") }) },
+    // Revenue per paying workspace: the window's revenue at a monthly rate, over the workspaces paying
+    // at its end (converted minus churned since launch).
+    {
+      id: "arpa",
+      label: L("Revenue per account, monthly", "درآمد ماهانه به ازای هر حساب"),
+      format: "money",
+      upIsGood: true,
+      value: (s) => ({
+        value: (s.cur("revenue") * 30) / s.days / Math.max(1, s.life("conversions") - s.life("churn")),
+        previous: (s.prev("revenue") * 30) / s.days / Math.max(1, s.life("conversions", 1) - s.life("churn", 1)),
+      }),
+    },
   ],
   radar: [
-    { label: L("Trial to paid", "آزمایشی به پولی"), full: L("Trials in this range that became paid workspaces", "دوره‌های آزمایشی این بازه که پولی شدند"), base: 62, spread: 6 },
+    { label: L("Free to paid", "رایگان به پولی"), full: L("Sign-ups in this range that became paid workspaces", "ثبت‌نام‌های این بازه که پولی شدند"), base: 62, spread: 6 },
     { label: L("Activation", "فعال‌سازی"), full: L("Invited a teammate in the first week", "در هفتهٔ اول هم‌تیمی دعوت کردند"), base: 71, spread: 5 },
     { label: L("Net retention", "ماندگاری خالص"), full: L("Revenue kept from last period's workspaces", "درآمد حفظ‌شده از فضاهای کاری دورهٔ قبل"), base: 84, spread: 4 },
     { label: L("Adoption", "پذیرش ویژگی‌ها"), full: L("Weekly users of three or more features", "کاربران هفتگی سه ویژگی یا بیشتر"), base: 57, spread: 6 },
@@ -90,7 +102,7 @@ export const saas: BusinessProfile = {
   ],
   live: {
     online: { label: L("Online now", "آنلاین الان"), ofLabel: L("active this week", "فعال در این هفته"), share: 0.16 },
-    today: { label: L("Trials today", "آزمایشی‌های امروز"), ofLabel: L("this week", "این هفته") },
+    today: { label: L("Sign-ups today", "ثبت‌نام‌های امروز"), ofLabel: L("this week", "این هفته") },
     lifetime: { label: L("Monthly recurring revenue", "درآمد ماهانهٔ تکرارشونده"), sub: L("last 30 days", "۳۰ روز گذشته"), stream: "revenue", format: "money", window: 30 },
   },
   health: [
@@ -110,9 +122,9 @@ export const saas: BusinessProfile = {
     cumulative: L("Workspaces over time", "روند فضاهای کاری"),
     split: { title: L("New and returning users", "کاربران جدید و بازگشتی"), sub: L("People active each day", "کاربران فعال هر روز"), fresh: L("New", "جدید"), returning: L("Returning", "بازگشتی") },
     funnel: {
-      title: L("Trial funnel", "قیف دورهٔ آزمایشی"),
-      sub: L("From starting a trial to paying, this range", "از شروع آزمایش تا پرداخت، در این بازه"),
-      steps: [L("Started a trial", "آزمایش را شروع کرد"), L("Created a project", "پروژه ساخت"), L("Invited the team", "تیم را دعوت کرد"), L("Paid", "پرداخت کرد")],
+      title: L("Sign-up funnel", "قیف ثبت‌نام"),
+      sub: L("From signing up to paying, this range", "از ثبت‌نام تا پرداخت، در این بازه"),
+      steps: [L("Signed up", "ثبت‌نام کرد"), L("Created a project", "پروژه ساخت"), L("Invited the team", "تیم را دعوت کرد"), L("Paid", "پرداخت کرد")],
       rates: [0.81, 0.58, 0.44],
     },
   },
@@ -163,15 +175,15 @@ export const saas: BusinessProfile = {
           label: L("MRR", "درآمد ماهانه"),
           kind: "money",
           digits: 0,
-          // A trial and a churned account bring in nothing.
+          // An account still onboarding and a churned one bring in nothing.
           gen: (_r, row) => {
-            if (row.status === "trial" || row.status === "churned") return 0;
+            if (row.status === "onboarding" || row.status === "churned") return 0;
             const plan = row.plan as { en: string };
             return (PRICE[plan.en] ?? 12) * (row.seats as number);
           },
         },
-        // A trial is at most two weeks old; anything else is older than one.
-        { id: "created", label: L("Created", "ایجاد"), kind: "ago", gen: (r, row, c) => (row.status === "trial" ? g.agoBetween(r, c.now, 0, 14) : g.agoBetween(r, c.now, 20, 600)), secondary: true },
+        // An account onboarding is at most two weeks old; anything else is older than one.
+        { id: "created", label: L("Created", "ایجاد"), kind: "ago", gen: (r, row, c) => (row.status === "onboarding" ? g.agoBetween(r, c.now, 0, 14) : g.agoBetween(r, c.now, 20, 600)), secondary: true },
       ],
     },
     {
