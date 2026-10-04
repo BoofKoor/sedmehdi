@@ -151,9 +151,13 @@ JS = r"""(opts) => {
       }
     }
     if (!demo && fs < 12 && !e.closest('[aria-hidden="true"], svg')) add('tiny', tag(e) + ' ' + fs.toFixed(1) + 'px');
-    let scroller = false; for (let n = e; n && n !== document.body; n = n.parentElement) { const o = css(n); if (/(auto|scroll)/.test(o.overflowX + o.overflowY)) { scroller = true; break; } }
+    // Text a scroller holds is reachable by scrolling, so only its own box can cut it there: an ellipsis is a cut
+    // wherever it sits. (Skipping every text inside a scroller hid the console's whole content well from the check at
+    // 721px and up, where the well scrolls, and with it a top card's leader ending in "...".)
+    const selfScroll = /(auto|scroll)/.test(s.overflowX + s.overflowY);
+    let scroller = selfScroll; for (let n = e.parentElement; !scroller && n && n !== document.body; n = n.parentElement) { const o = css(n); if (/(auto|scroll)/.test(o.overflowX + o.overflowY)) scroller = true; }
+    if (!selfScroll && (s.overflowX !== 'visible' || s.textOverflow === 'ellipsis') && e.scrollWidth > e.clientWidth + 1) add('clipped', tag(e) + ' ' + e.scrollWidth + '>' + e.clientWidth);
     if (!scroller) {
-      if ((s.overflowX !== 'visible' || s.textOverflow === 'ellipsis') && e.scrollWidth > e.clientWidth + 1) add('clipped', tag(e) + ' ' + e.scrollWidth + '>' + e.clientWidth);
       // clipped by an ancestor that hides overflow (inside a scroller it is reachable by scrolling)
       for (let n = e.parentElement; n && n !== document.body; n = n.parentElement) { const ns = css(n);
         if (/(hidden|clip)/.test(ns.overflowX + ns.overflowY)) { const a = n.getBoundingClientRect();
