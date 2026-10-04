@@ -14,11 +14,12 @@ Checks, each a function returning its problems:
   phone_a11y on phones (390 and 320): text contrast 4.5:1 (3:1 large) on its real background and 44px targets, for
              every business in both themes
   motion     the live figures tick, pause while the tab is hidden, and stay still with Reduce Motion
-  entry      the case study's button and the Work card's pill: at 1024/1280/1440/1920/2560 in both themes the pill sits
-             clear of every text, the logo tile and the card frame, is 44px, and reaches 4.5:1 on the card; the phone
-             button too; both open the demo
+  entry      the ways in: the Spindle Admin Kit card second on Home and Work (desktop stack and phone list) opens its case
+             study, whose "Try the Live Demo" button (44px) opens the demo; the GozarX case study links to the kit's case
+             study instead of the demo; no card carries a demo pill whose hit area sits on the card's own link
   persist    ?profile= and ?lang= apply and are remembered, the address follows a switch, ?theme= applies unsaved
-  layout     no layout shift on load, range, business and tab switches, at 1440 and 390
+  layout     no layout shift on load, range, business and tab switches, at 1440 and 390; and on load in Persian, every
+             business, at 390 (the counting figures grew leftwards there, which moved them every frame)
   bundle     first-load JS at most 250 KB gzipped, the other tabs and pages left for later (prints every chunk)
   keyboard   every control is reachable by Tab with a visible focus ring, and the picker, range and chart answer keys
   names      every visible control, dialog, image, tab panel and table has an accessible name (the icon-only buttons
@@ -26,6 +27,13 @@ Checks, each a function returning its problems:
   labels     text the reading direction or its room can garble, measured: a list's figure and its share or note stay
              apart and in reading order, the radar's labels stay inside the figure and off the chart, and an
              "up / total" pair reads left to right, for every business in both languages, at 1440 and 390
+  words      none of the retired VPN vocabulary (VPN, config, claim, squad, trial; کانفیگ, آزمایشی and the like) anywhere:
+             in the built files, in every page's text, labels and titles for every business in both languages, and in
+             every CSV. The one exception is the alias that sends the old `vpn` id to `hosting`
+  kpis       five figures on every business: the hero spans two rows beside four tiles (two by two at 1440, one beside
+             and two under at 768, one column at 390); the hosting hero reads "now", and `?profile=vpn` opens hosting
+  numbers    the Spindle case study's figures are the build's: its first-load JS within 0.5 KB of the measured gzip
+             size, and its count of unit tests and browser checks equal to the suites' own
 
 --prove runs every check twice: first on a deliberately broken page (a fault injected by script, CSS or a rewritten
 response; the code shipped carries no switch for it), where it must FAIL, then on the real page, where it must PASS.
@@ -45,7 +53,7 @@ ONLY = next((sys.argv[i + 1].split(',') for i, a in enumerate(sys.argv) if a == 
 JSON_OUT = next((sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == '--json' and i + 1 < len(sys.argv)), None)
 DEMO = BASE + '/lab/admin/'
 HOST = urlparse(BASE).netloc
-PROFILES = ['vpn', 'saas', 'ecommerce', 'education', 'print']
+PROFILES = ['hosting', 'saas', 'ecommerce', 'education', 'print']
 RANGES = [7, 14, 30, 90]
 WIDTHS = [1440, 1024, 768, 390, 320]
 REPORT = {}  # extra findings the report quotes: the request list, chunk sizes, pill geometry
@@ -81,7 +89,9 @@ def _glow(bg, tint, card, x, y):
 # background, or against BOTH ends of a gradient (the hero tile). SVG text reads its fill. An element can name the
 # colour its text sits on with data-contrast-bg (an SVG pill drawn behind a label, which no CSS background describes).
 CONTRAST = r"""() => {
-  const parse = s => { if (!s) return null; const m = s.match(/-?[\d.]+/g); if (!m) return null; const a = m.map(Number);
+  const parse = s => { if (!s) return null; const hx = s.trim().match(/^#([0-9a-f]{6})$/i);
+    if (hx) return [0, 2, 4].map(i => parseInt(hx[1].slice(i, i + 2), 16)).concat(1);
+    const m = s.match(/-?[\d.]+/g); if (!m) return null; const a = m.map(Number);
     return s.startsWith('color(') ? [a[0] * 255, a[1] * 255, a[2] * 255, a.length > 3 ? a[3] : 1] : [a[0], a[1], a[2], a.length > 3 ? a[3] : 1]; };
   const lum = c => { const v = c.slice(0, 3).map(x => { x /= 255; return x <= .04045 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; }); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
   const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
@@ -102,6 +112,17 @@ CONTRAST = r"""() => {
     }
     return [flat(root)];
   };
+  // An SVG shape painted before an SVG text element, and under its centre, is what the text sits on: the
+  // hero sparkline's marked day is a translucent band, and its weekday label was drawn on it.
+  const under = (t, x, y) => { const svg = t.closest('svg'); if (!svg) return null; let hit = null;
+    for (const sh of svg.querySelectorAll('path, rect, circle, ellipse, polygon')) { if (sh.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_PRECEDING) break;
+      const s = getComputedStyle(sh), f = parse(s.fill); if (!f || f[3] === 0 || s.fill === 'none') continue; const r = sh.getBoundingClientRect();
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+      const g = sh.closest('[clip-path]'), id = g && (g.getAttribute('clip-path').match(/#([^)"']+)/) || [])[1], cp = id && document.getElementById(id);
+      const shape = cp && cp.querySelector('path, rect, circle, ellipse, polygon');
+      if (shape && shape.isPointInFill) { const m = shape.getScreenCTM(); if (m && !shape.isPointInFill(new DOMPoint(x, y).matrixTransform(m.inverse()))) continue; }
+      f[3] *= parseFloat(s.fillOpacity || 1) * parseFloat(s.opacity || 1); hit = hit ? over(f, hit) : f; }
+    return hit; };
   const out = [];
   const els = new Set();
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -118,7 +139,8 @@ CONTRAST = r"""() => {
     fg[3] *= op;
     const size = parseFloat(cs.fontSize), bold = parseInt(cs.fontWeight) >= 700;
     const need = size >= 24 || (size >= 18.66 && bold) ? 3 : 4.5;
-    const worst = Math.min(...bases(e).map(b => cr(over(fg, b), b)));
+    const sh = isSvg ? under(e, r.left + r.width / 2, r.top + r.height / 2) : null;
+    const worst = Math.min(...bases(e).map(b => (sh ? over(sh, b) : b)).map(b => cr(over(fg, b), b)));
     if (worst < need - .005) out.push({ text: e.textContent.trim().slice(0, 40), ratio: Math.round(worst * 100) / 100, need, size });
   }
   return out;
@@ -227,7 +249,7 @@ async def check_render(browser, fault=None):
             s = await pg.evaluate(STATE)
             tag = f'{p} {r}d'
             if s['range'] != str(r): problems.append(f'{tag}: range control shows {s["range"]}')
-            if len(s['kpis']) != 4 or any(v is None or v != v or v <= 0 for v in s['kpis']): problems.append(f'{tag}: figures {s["kpis"]}')
+            if len(s['kpis']) != 5 or any(v is None or v != v or v <= 0 for v in s['kpis']): problems.append(f'{tag}: figures {s["kpis"]}')
             if s['trend'] < 4 or s['errors'] or s['empty']: problems.append(f'{tag}: trend paths {s["trend"]}, error {s["errors"]}, empty {s["empty"]}')
             await pg.click('[data-testid="trend"] [data-testid="chart-table-toggle"]')
             rows = await pg.locator('[data-testid="trend"] [data-testid="chart-table"] tbody tr').count()
@@ -251,12 +273,12 @@ def _num(s):
 async def check_csv(browser, fault=None):
     problems = []
     ctx, pg = await open_page(browser, fault)
-    for p in ['vpn', 'ecommerce']:
+    for p in ['hosting', 'ecommerce']:
         await goto(pg, f'{DEMO}?profile={p}&lang=en#/')
         await pg.click('[data-testid="range"] [data-value="14"]'); await pg.wait_for_function(SETTLED); await pg.wait_for_timeout(300)
         screen = await pg.evaluate("""() => ({
           kpis: [...document.querySelectorAll('[data-kpi] [data-value]')].map(e => parseFloat(e.dataset.value)),
-          tops: [...document.querySelectorAll('[data-top]')].map(t => ({ head: t.querySelector('.truncate')?.textContent.trim(), value: parseFloat(t.querySelector('[data-value]')?.dataset.value) })),
+          tops: [...document.querySelectorAll('[data-top]')].map(t => ({ head: t.querySelector('[data-top-head]')?.textContent.trim(), value: parseFloat(t.querySelector('[data-value]')?.dataset.value) })),
           rates: [...document.querySelectorAll('[data-rate]')].map(e => parseFloat(e.dataset.rate)) })""")
         await pg.click('[data-testid="trend"] [data-testid="chart-table-toggle"]')
         table = await pg.evaluate("[...document.querySelectorAll('[data-testid=\"trend\"] [data-testid=\"chart-table\"] tbody tr')].map(r => [...r.children].map(c => c.textContent.trim()))")
@@ -277,10 +299,10 @@ async def check_csv(browser, fault=None):
         if [(r[2], float(r[4])) for r in top] != [(t['head'], t['value']) for t in screen['tops']]: problems.append(f'{tag}: CSV top cards {[(r[2], r[4]) for r in top]} vs screen {screen["tops"]}')
         if [float(r[4]) for r in rate] != screen['rates']: problems.append(f'{tag}: CSV rates {[r[4] for r in rate]} vs screen {screen["rates"]}')
     # a records table: every filtered row, sorted as on screen, every column
-    await goto(pg, f'{DEMO}?profile=vpn&lang=en#/users')
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en#/customers')
     await pg.click('[data-testid="records-status"] [data-value="active"]')
     await pg.fill('[data-testid="records-search"]', 'a'); await pg.wait_for_timeout(450)
-    await pg.click('th button:has-text("Configs")'); await pg.wait_for_timeout(200)
+    await pg.click('th button:has-text("Servers")'); await pg.wait_for_timeout(200)
     count = int(await pg.get_attribute('[data-testid="records-count"]', 'data-count'))
     names = await pg.evaluate("[...document.querySelectorAll('tbody tr')].map(r => r.querySelector('td .font-medium')?.textContent.trim())")
     cols = await pg.evaluate("[...document.querySelectorAll('thead th')].map(t => t.textContent.trim())")
@@ -300,7 +322,7 @@ async def check_csv(browser, fault=None):
 async def check_palette(browser, fault=None):
     problems = []
     ctx, pg = await open_page(browser, fault)
-    await goto(pg, f'{DEMO}?profile=vpn&lang=en')
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en')
     async def run(key, query, expect, label):
         await pg.keyboard.press(key)
         try: await pg.wait_for_selector('[data-testid="palette"]', timeout=1500)
@@ -328,7 +350,7 @@ async def check_theme_lang(browser, fault=None):
     # The theme follows the portfolio's saved one (same origin, same key) on first load.
     ctx, pg = await open_page(browser, fault, color_scheme='dark')
     await pg.goto(BASE + '/'); await pg.evaluate("localStorage.setItem('sm-theme', 'light')")
-    await goto(pg, f'{DEMO}?profile=vpn&lang=en')
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en')
     if (await pg.evaluate(STATE))['theme'] != 'light': problems.append('the demo did not take the portfolio\'s saved light theme under a dark system')
     await pg.click('[data-testid="theme-toggle"]'); await pg.wait_for_timeout(150)
     t = await pg.evaluate("[document.documentElement.dataset.theme, localStorage.getItem('sm-theme')]")
@@ -378,7 +400,7 @@ async def check_phone_a11y(browser, fault=None):
                 lang = 'fa' if p in ('ecommerce', 'print') else 'en'
                 ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 844}, is_mobile=True, has_touch=True, color_scheme=scheme, reduced_motion='reduce')
                 await goto(pg, f'{DEMO}?profile={p}&lang={lang}&theme={scheme}')
-                pages = ['#/', '#/growth', '#/health'] if p != 'vpn' else ['#/', '#/growth', '#/retention', '#/behaviour', '#/users', '#/servers', '#/health']
+                pages = ['#/', '#/growth', '#/health'] if p != 'hosting' else ['#/', '#/growth', '#/retention', '#/behaviour', '#/servers', '#/customers', '#/health']
                 for h in pages:
                     await nav(pg, h)
                     tag = f'{w}px {scheme} {p} {lang} {h}'
@@ -399,7 +421,7 @@ async def check_motion(browser, fault=None):
     problems = []
     # Normal motion: the figures move within a few seconds.
     ctx, pg = await open_page(browser, fault); await ctx.add_init_script(HIDDEN)
-    await goto(pg, f'{DEMO}?profile=vpn&lang=en'); a = await _online(pg)
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en'); a = await _online(pg)
     for _ in range(12):
         await pg.wait_for_timeout(1000); b = await _online(pg)
         if b[0] != a[0]: break
@@ -413,67 +435,58 @@ async def check_motion(browser, fault=None):
     await ctx.close()
     # Reduce Motion: still from the start, and said so.
     ctx, pg = await open_page(browser, fault, reduced_motion='reduce')
-    await goto(pg, f'{DEMO}?profile=vpn&lang=en'); r0 = await _online(pg); await pg.wait_for_timeout(8000); r1 = await _online(pg)
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en'); r0 = await _online(pg); await pg.wait_for_timeout(8000); r1 = await _online(pg)
     if r0[1] != 'still' or r1[0] != r0[0]: problems.append(f'Reduce Motion: {r0} -> {r1}, expected still')
     if await pg.locator('[data-testid="live-dot"] .animate-ping').count(): problems.append('Reduce Motion: the live dot still pings')
     await ctx.close()
     return problems
 
 
-PILL = r"""() => { const R = e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
-  const card = document.querySelector('.work-desk .st-card'), btn = document.querySelector('.work-desk .st-lab-btn');
-  if (!card || !btn) return null;
-  const parts = [...card.querySelectorAll('.st-num, .st-title, .st-sum, .st-kpi, .st-kpi small, .st-status, .st-chips .chip')].map(e => ['text ' + e.className.split(' ')[0], R(e)]);
-  parts.push(['logo tile', R(card.querySelector('.pj-logo'))]); const win = card.querySelector('.st-media .window, .st-media .phone'); if (win) parts.push(['screenshot', R(win)]);
-  const cs = getComputedStyle(btn), c = getComputedStyle(card);
-  return { card: R(card), radius: parseFloat(c.borderTopLeftRadius), btn: R(btn), parts, color: cs.color, pillBg: cs.backgroundColor, cardBg: c.backgroundColor,
-           tint: c.getPropertyValue('--tint').trim(), href: btn.getAttribute('href'), name: btn.textContent.replace(/\s+/g, ' ').trim() }; }"""
+CARDS = r"""() => { const R = e => e.getBoundingClientRect();
+  const links = [...document.querySelectorAll('a[href]')].filter(a => a.getClientRects().length), overlaps = [];
+  for (const c of document.querySelectorAll('.st-card, .fr-card')) { if (!c.getClientRects().length) continue; const r = R(c);
+    for (const a of links) { if (a === c || c.contains(a) || a.contains(c)) continue; const b = R(a);
+      if (b.left < r.right - 1 && b.right > r.left + 1 && b.top < r.bottom - 1 && b.bottom > r.top + 1) overlaps.push((a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30)); } }
+  return { desk: [...document.querySelectorAll('.work-desk .st-card')].map(c => c.getAttribute('href')),
+           phone: [...document.querySelectorAll('.work-phone .fr-card')].map(c => c.getAttribute('href')),
+           pills: document.querySelectorAll('.st-lab, .st-lab-btn, .fr-lab').length, overlaps }; }"""
 
-def _hits(a, b, pad=0):
-    return a[0] < b[2] + pad and a[2] > b[0] - pad and a[1] < b[3] + pad and a[3] > b[1] - pad
+CASE_BUTTON = """() => { const a = document.querySelector('.case-lab a'); if (!a) return null; const r = a.getBoundingClientRect();
+  return { w: r.width, h: r.height, href: a.getAttribute('href'), name: a.textContent.replace(/\\s+/g, ' ').trim() }; }"""
 
 async def check_entry(browser, fault=None):
-    problems, geo = [], []
-    for scheme in ['light', 'dark']:
-        for w in [1024, 1280, 1440, 1920, 2560]:
-            ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 900}, color_scheme=scheme)
-            await pg.goto(BASE + '/projects/', wait_until='networkidle')
-            await pg.evaluate("document.querySelector('.work-desk .st-card').scrollIntoView({ block: 'start' })"); await pg.wait_for_timeout(400)
-            m = await pg.evaluate(PILL); tag = f'Work {w}px {scheme}'
-            if not m: problems.append(f'{tag}: no Live Demo pill on the card'); await ctx.close(); continue
-            c, b = m['card'], m['btn']; inset = min(b[0] - c[0], b[1] - c[1], c[2] - b[2], c[3] - b[3])
-            if inset < 16: problems.append(f'{tag}: the pill is {inset:.0f}px from the card frame')
-            for name, r in m['parts']:
-                if _hits(b, r, 4): problems.append(f'{tag}: the pill falls on the {name}')
-            hw = (b[2] - b[0], b[3] - b[1])
-            if min(hw) < 44: problems.append(f'{tag}: the pill is {hw[0]:.0f}x{hw[1]:.0f}')
-            under = _glow(m['cardBg'], m['tint'], [c[0], c[1], c[2] - c[0], c[3] - c[1]], b[0], b[1]); ratio = _cr(_over(m['color'], _over(m['pillBg'], under)), _over(m['pillBg'], under))
-            if ratio < 4.5: problems.append(f'{tag}: label {ratio:.2f}:1 on the card')
-            if not m['href'].startswith('/lab/admin/') or not m['name'].startswith('Live Demo'): problems.append(f'{tag}: link {m["href"]} "{m["name"]}"')
-            geo.append({'width': w, 'theme': scheme, 'pill': [round(v) for v in b], 'card': [round(v) for v in c], 'inset': round(inset), 'size': [round(v) for v in hw], 'contrast': round(ratio, 2)})
+    problems = []
+    kit = '/projects/spindle/'
+    for w, phone in [(1440, False), (1024, False), (390, True)]:
+        for path in ['/', '/projects/']:
+            ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 900}, is_mobile=phone, has_touch=phone)
+            await pg.goto(BASE + path, wait_until='networkidle'); m = await pg.evaluate(CARDS); tag = f'{path} {w}px'
+            cards = m['phone'] if phone else m['desk']
+            if len(cards) < 2 or cards[1] != kit: problems.append(f'{tag}: the second card is {cards[1] if len(cards) > 1 else None}, not the kit')
+            if m['pills']: problems.append(f'{tag}: {m["pills"]} demo pill(s) on the cards')
+            if m['overlaps']: problems.append(f'{tag}: links drawn over a card: {m["overlaps"][:3]}')
             await ctx.close()
-    # phones: a button under the card, and the case study's button; both open the demo
-    for scheme in ['light', 'dark']:
-        ctx, pg = await open_page(browser, fault, viewport={'width': 390, 'height': 844}, color_scheme=scheme, is_mobile=True, has_touch=True)
+    for w, phone in [(1440, False), (390, True)]:
+        ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 900}, is_mobile=phone, has_touch=phone)
         await pg.goto(BASE + '/projects/', wait_until='networkidle')
-        m = await pg.evaluate("""() => { const b = document.querySelector('.work-phone .fr-lab'), c = document.querySelector('.work-phone .fr-card'); if (!b) return null;
-          const r = b.getBoundingClientRect(), k = c.getBoundingClientRect(), cs = getComputedStyle(b);
-          return { w: r.width, h: r.height, below: r.top >= k.bottom, color: cs.color, top: cs.getPropertyValue('--button-gray-top').trim(), bottom: cs.getPropertyValue('--button-gray-bottom').trim(),
-                   page: getComputedStyle(document.body).backgroundColor, href: b.getAttribute('href') }; }""")
-        if not m: problems.append(f'Work 390px {scheme}: no Live Demo button')
-        else:
-            stops = [_over(s, m['page']) for s in (m['top'], m['bottom']) if s]
-            worst = min(_cr(_over(m['color'], s), s) for s in stops) if stops else 0
-            if min(m['w'], m['h']) < 44 or not m['below'] or worst < 4.5 or not (m['href'] or '').startswith('/lab/admin/'):
-                problems.append(f'Work 390px {scheme}: {m["w"]:.0f}x{m["h"]:.0f}, below the card {m["below"]}, {worst:.2f}:1, link {m["href"]}')
-        await pg.goto(BASE + '/projects/gozarx/', wait_until='networkidle')
-        cs = await pg.evaluate("""() => { const a = document.querySelector('.case-lab a'); if (!a) return null; const r = a.getBoundingClientRect(); return { w: r.width, h: r.height, href: a.getAttribute('href'), name: a.textContent.trim() }; }""")
-        if not cs or min(cs['w'], cs['h']) < 44 or not cs['href'].startswith('/lab/admin/'): problems.append(f'case study {scheme}: button {cs}')
+        card = pg.locator(f'.work-phone .fr-card[href="{kit}"]' if phone else f'.work-desk .st-card[href="{kit}"]').first
+        if await card.count():
+            await card.evaluate("e => e.scrollIntoView({ block: 'center' })"); await pg.wait_for_timeout(300); box = await card.bounding_box()
+            await pg.mouse.click(box['x'] + 60, box['y'] + 60); await pg.wait_for_load_state('networkidle'); await pg.wait_for_timeout(300)
+            if await pg.evaluate('location.pathname') != kit: problems.append(f'Work {w}px: the kit card opened {await pg.evaluate("location.pathname")}')
+        await pg.goto(BASE + kit, wait_until='networkidle')
+        b = await pg.evaluate(CASE_BUTTON)
+        if not b or min(b['w'], b['h']) < 44 or not (b['href'] or '').startswith('/lab/admin/') or not b['name'].startswith('Try the Live Demo'):
+            problems.append(f'case study {w}px: demo button {b}')
         else:
             await pg.click('.case-lab a'); await pg.wait_for_load_state('networkidle')
-            if not await pg.evaluate("location.pathname === '/lab/admin/' && !!document.querySelector('[data-page]')"): problems.append(f'case study {scheme}: the button did not open the demo')
+            if not await pg.evaluate("location.pathname === '/lab/admin/' && !!document.querySelector('[data-page]')"): problems.append(f'case study {w}px: the button did not open the demo')
+        await pg.goto(BASE + '/projects/gozarx/', wait_until='networkidle')
+        g = await pg.evaluate("""() => ({ button: !!document.querySelector('.case-lab'), lab: [...document.querySelectorAll('a[href^="/lab/"]')].length,
+                                         kit: [...document.querySelectorAll('.prose a')].some(a => a.getAttribute('href') === '/projects/spindle/') })""")
+        if g['button'] or g['lab']: problems.append(f'GozarX case study {w}px: still links the demo directly ({g})')
+        if not g['kit']: problems.append(f"GozarX case study {w}px: no line linking the kit's case study")
         await ctx.close()
-    if not fault: REPORT['pill'] = geo
     return problems
 
 
@@ -498,6 +511,12 @@ async def check_persist(browser, fault=None):
     saved = await pg.evaluate("localStorage.getItem('sm-theme')")
     await goto(pg, f'{DEMO}?theme=dark')
     if (await pg.evaluate(STATE))['theme'] != 'dark' or await pg.evaluate("localStorage.getItem('sm-theme')") != saved: problems.append('?theme=dark did not apply, or it was saved')
+    # the retired id, in a link or in a browser that saved it, opens the business that replaced it
+    await goto(pg, f'{DEMO}?profile=vpn')
+    s = await pg.evaluate(STATE)
+    if s['profile'] != 'hosting' or 'profile=hosting' not in s['search']: problems.append(f'?profile=vpn opened {s["profile"]} ({s["search"]})')
+    await pg.evaluate("localStorage.setItem('sm-admin-profile', 'vpn')"); await goto(pg, DEMO)
+    if (await pg.evaluate(STATE))['profile'] != 'hosting': problems.append('a saved "vpn" did not open hosting')
     await ctx.close()
     return problems
 
@@ -509,7 +528,7 @@ async def check_layout(browser, fault=None):
     for w in [1440, 390]:
         ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 900}, is_mobile=w < 721, has_touch=w < 721)
         await ctx.add_init_script(CLS)
-        await goto(pg, f'{DEMO}?profile=vpn&lang=en'); await pg.wait_for_timeout(1800)
+        await goto(pg, f'{DEMO}?profile=hosting&lang=en'); await pg.wait_for_timeout(1800)
         steps = [('load', None), ('range', lambda: pg.click('[data-testid="range"] [data-value="30"]')),
                  ('business', lambda: _pick(pg, 'print')), ('tab', lambda: nav(pg, '#/growth'))]
         for name, act in steps:
@@ -518,6 +537,14 @@ async def check_layout(browser, fault=None):
             v = await pg.evaluate('window.__shift'); seen[f'{w}px {name}'] = round(v, 4)
             if v > 0.01: problems.append(f'{w}px {name}: layout shift {v:.3f}')
         await ctx.close()
+    # Persian, on load, every business: a figure counting up grew leftwards there and moved every frame
+    ctx, pg = await open_page(browser, fault, viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    await ctx.add_init_script(CLS)
+    for prof in PROFILES:
+        await goto(pg, f'{DEMO}?profile={prof}&lang=fa'); await pg.wait_for_timeout(1500)
+        v = await pg.evaluate('window.__shift'); seen[f'390px fa {prof} load'] = round(v, 4)
+        if v > 0.005: problems.append(f'390px fa {prof} load: layout shift {v:.4f}')
+    await ctx.close()
     if not fault: REPORT['layout_shift'] = seen
     return problems
 
@@ -536,7 +563,7 @@ async def check_bundle(browser, fault=None):
             try: bodies.append((resp.url, resp.request.resource_type, await resp.body()))
             except Exception: pass
     pg.on('response', lambda r: asyncio.ensure_future(keep(r)))
-    await goto(pg, f'{DEMO}?profile=vpn&lang=en'); await pg.wait_for_timeout(500)
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en'); await pg.wait_for_timeout(500)
     js = 0
     for url, kind, body in bodies:
         gz = len(gzip.compress(body, 9)); name = url.rsplit('/', 1)[-1]
@@ -556,7 +583,7 @@ FOCUS = r"""() => { const a = document.activeElement; if (!a || a === document.b
 async def check_keyboard(browser, fault=None):
     problems = []
     ctx, pg = await open_page(browser, fault)
-    await goto(pg, f'{DEMO}?profile=vpn&lang=en')
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en')
     await pg.keyboard.press('Tab')
     f = await pg.evaluate(FOCUS)
     if not f or f['id'] != 'skip-link': problems.append(f'the first Tab lands on {f}, not the skip link')
@@ -687,6 +714,124 @@ async def check_labels(browser, fault=None):
     return problems
 
 
+# The vocabulary of the business the demo no longer models, in both languages, whole words only (so "configuration"
+# and "trialled" are not hits, and neither is anything inside another word).
+RETIRED = re.compile(r'\b(vpn|configs?|claim(s|ed|ing)?|squads?|trials?)\b|کانفیگ|آزمایشی|وی‌پی‌ان|فیلترشکن|اسکواد', re.I)
+# The one place the old id may stay: the alias that opens the hosting business for it (index.html and the bundle).
+ALIAS = re.compile(r"""["']?vpn["']?\s*:\s*["']hosting["']""")
+
+WORDS = r"""() => { const bits = [document.title, document.body.innerText];
+  for (const e of document.querySelectorAll('[aria-label], [title], [placeholder], [alt]'))
+    for (const k of ['aria-label', 'title', 'placeholder', 'alt']) if (e.getAttribute(k)) bits.push(e.getAttribute(k));
+  for (const t of document.querySelectorAll('svg text, svg title')) bits.push(t.textContent);
+  return bits.join('\n'); }"""
+
+def _retired(text):
+    return sorted({m.group(0) for m in RETIRED.finditer(ALIAS.sub('', text))})
+
+async def check_words(browser, fault=None):
+    problems, bodies = [], {}
+    ctx, pg = await open_page(browser, fault)
+    async def keep(resp):
+        if resp.request.resource_type in ('document', 'script', 'stylesheet') and urlparse(resp.url).netloc == HOST and '/lab/admin/' in resp.url:
+            try: bodies[resp.url.split('?')[0]] = (await resp.body()).decode('utf-8', 'replace')
+            except Exception: pass
+    pg.on('response', lambda r: asyncio.ensure_future(keep(r)))
+    for lang in ['en', 'fa']:
+        for prof in PROFILES:
+            await goto(pg, f'{DEMO}?profile={prof}&lang={lang}')
+            e0, e1 = await entity_paths(pg)
+            for h in ['#/', '#/growth', '#/retention', '#/behaviour', e0, e1, '#/health']:
+                await nav(pg, h)
+                for w in _retired(await pg.evaluate(WORDS)): problems.append(f'{prof} {lang} {h}: "{w}" on the page')
+                if h in (e0, e1):  # a record's dialog tells its story in the business's words
+                    await pg.locator('tbody tr[tabindex="0"]').first.click(); await pg.wait_for_timeout(250)
+                    for w in _retired(await pg.evaluate(WORDS)): problems.append(f'{prof} {lang} {h} record dialog: "{w}"')
+                    await pg.keyboard.press('Escape'); await pg.wait_for_timeout(150)
+                # every CSV the page offers, in the language on screen
+                sel = '[data-testid="records-csv"]' if h in (e0, e1) else '[data-testid="dash-csv"]' if h in ('#/', '#/growth', '#/retention', '#/behaviour') else None
+                if sel and await pg.locator(sel).count():
+                    async with pg.expect_download() as dl:
+                        await pg.click(sel)
+                    text = open(await (await dl.value).path(), encoding='utf-8-sig').read()
+                    for w in _retired(text): problems.append(f'{prof} {lang} {h} CSV: "{w}"')
+        # the overlays list every business, command and page by name
+        for opener in ['[data-testid="palette-open"]', '[data-testid="business-picker"]', '#demo-menu-btn']:
+            await pg.locator(opener).locator('visible=true').first.click(); await pg.wait_for_timeout(250)
+            for w in _retired(await pg.evaluate(WORDS)): problems.append(f'{lang} {opener}: "{w}"')
+            await pg.keyboard.press('Escape'); await pg.wait_for_timeout(150)
+    await ctx.close()
+    for url, body in sorted(bodies.items()):
+        for w in _retired(body): problems.append(f'{url.replace(BASE, "")}: "{w}" in the built file')
+    if not fault: REPORT['words_files'] = len(bodies)
+    return sorted(set(problems))
+
+
+KPIS = r"""() => [...document.querySelectorAll('[data-testid="kpis"] > [data-kpi]')].map(k => { const r = k.getBoundingClientRect();
+  return { id: k.dataset.kpi, x: Math.round(r.left), y: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom), text: k.innerText.replace(/\s+/g, ' ').trim() }; })"""
+
+async def check_kpis(browser, fault=None):
+    problems = []
+    for w, phone in [(1440, False), (768, False), (390, True)]:
+        ctx, pg = await open_page(browser, fault, viewport={'width': w, 'height': 900}, is_mobile=phone, has_touch=phone)
+        for prof in PROFILES:
+            await goto(pg, f'{DEMO}?profile={prof}&lang=en'); await pg.wait_for_timeout(200)
+            k = await pg.evaluate(KPIS); tag = f'{w}px {prof}'
+            if len(k) != 5: problems.append(f'{tag}: {len(k)} figures, not 5'); continue
+            hero, tiles = k[0], k[1:]
+            if w >= 1024:  # the hero beside a two-by-two
+                rows, cols = sorted({t['y'] for t in tiles}), sorted({t['x'] for t in tiles})
+                side = all(t['x'] >= hero['r'] for t in tiles) or all(t['r'] <= hero['x'] for t in tiles)
+                if len(rows) != 2 or len(cols) != 2 or not side or abs(hero['y'] - rows[0]) > 1 or abs(hero['b'] - max(t['b'] for t in tiles)) > 1:
+                    problems.append(f'{tag}: not a hero beside a two-by-two {k}')
+            elif w >= 640:  # the hero beside two, two under it
+                beside, under = tiles[:2], tiles[2:]
+                if len({t['x'] for t in beside}) != 1 or len({t['y'] for t in under}) != 1 or not all(t['y'] >= hero['b'] for t in under) or abs(hero['b'] - beside[1]['b']) > 1:
+                    problems.append(f'{tag}: not a hero beside two with two under it {k}')
+            else:  # one column
+                if len({t['x'] for t in k}) != 1 or [t['y'] for t in k] != sorted(t['y'] for t in k): problems.append(f'{tag}: not one column {k}')
+            if prof == 'hosting' and '· now' not in hero['text'].lower(): problems.append(f'{tag}: the hosting hero does not read "now" ({hero["text"]})')
+        await ctx.close()
+    return problems
+
+
+async def _measure_first_load(browser, fault=None):
+    ctx, pg = await open_page(browser, fault)
+    bodies = []
+    async def keep(resp):
+        if resp.request.resource_type == 'script':
+            try: bodies.append(await resp.body())
+            except Exception: pass
+    pg.on('response', lambda r: asyncio.ensure_future(keep(r)))
+    await goto(pg, f'{DEMO}?profile=hosting&lang=en'); await pg.wait_for_timeout(500)
+    await ctx.close()
+    return sum(len(gzip.compress(b, 9)) for b in bodies) / 1024
+
+def _unit_tests():
+    """How many unit tests the demo's suite runs, from vitest's own JSON report."""
+    import subprocess, tempfile
+    out = os.path.join(tempfile.mkdtemp(), 'vitest.json')
+    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'apps', 'admin-demo')
+    subprocess.run(['npx', 'vitest', 'run', '--reporter=json', f'--outputFile={out}'], cwd=root, capture_output=True, timeout=180)
+    with open(out, encoding='utf-8') as f: return json.load(f)['numTotalTests']
+
+async def check_numbers(browser, fault=None):
+    """The case study states the build's own figures: read them from the Markdown, measure them, compare."""
+    problems = []
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src', 'content', 'projects', 'spindle.md')
+    if not os.path.exists(path): return ['no case study at src/content/projects/spindle.md']
+    text = open(path, encoding='utf-8').read()
+    kb = re.search(r'([\d.]+) KB of JavaScript', text); units = re.search(r'(\d+) unit tests', text); browsers = re.search(r'(\d+) browser checks', text)
+    if not kb or not units or not browsers: return [f'the case study does not state the figures (KB {bool(kb)}, unit tests {bool(units)}, browser checks {bool(browsers)})']
+    js = await _measure_first_load(browser, fault)
+    if abs(js - float(kb.group(1))) > 0.5: problems.append(f'first-load JS is {js:.1f} KB gzipped, the case study says {kb.group(1)} KB')
+    n = _unit_tests()
+    if n != int(units.group(1)): problems.append(f'the unit suite runs {n} tests, the case study says {units.group(1)}')
+    if len(CHECKS) != int(browsers.group(1)): problems.append(f'this script has {len(CHECKS)} browser checks, the case study says {browsers.group(1)}')
+    if not fault: REPORT['numbers'] = {'js_kb': round(js, 1), 'unit_tests': n, 'browser_checks': len(CHECKS)}
+    return problems
+
+
 # ------------------------------------------------------------------------------------------------------------- runner
 FAULTS = {
     'hosts': Fault('a beacon to another host and a console error', init="addEventListener('DOMContentLoaded', () => { fetch('https://example.com/beacon').catch(() => {}); console.error('injected error'); });"),
@@ -699,7 +844,7 @@ FAULTS = {
     'overflow': Fault('a 130vw-wide element under the page title', css='[data-page] > :first-child::after { content: ""; display: block; flex: none; width: 130vw; height: 1px; }'),
     'phone_a11y': Fault('faded secondary text and a 32px theme button on phones', css='@media (max-width: 720px) { [data-testid="theme-toggle"] { width: 32px !important; height: 32px !important; min-width: 0 !important; min-height: 0 !important; } .text-content-muted { color: rgb(150 150 150) !important; } }'),
     'motion': Fault('a ticker that ignores Reduce Motion', init="(() => { const mm = window.matchMedia.bind(window); window.matchMedia = q => /prefers-reduced-motion/.test(q) ? mm('(max-width: 1px)') : mm(q); })();"),
-    'entry': Fault('the pill moved onto the card title', css='.st-lab-btn { top: 200px !important; right: auto !important; left: 120px !important; }'),
+    'entry': Fault('the case study without its demo button', css='.case-lab { display: none !important; }'),
     'persist': Fault('storage that forgets every write', init="Storage.prototype.setItem = function () {};"),
     'layout': Fault('a notice that pushes the page down after load', init="setTimeout(() => { const m = document.getElementById('main'); if (m) m.prepend(Object.assign(document.createElement('div'), { style: 'height:64px' })); }, 1200);"),
     'bundle': Fault('a 300 KB script of noise added to the first load', routes=[
@@ -712,12 +857,17 @@ FAULTS = {
     'labels': Fault('list figures as one inline run, radar labels unwrapped, pairs set right to left', css=
         '[data-barlist-value] { display: inline !important; } [data-radar-label] { max-width: none !important; white-space: nowrap !important; } '
         '[data-pair] { direction: rtl !important; }'),
+    'words': Fault('a line of VPN copy added to every page', init="addEventListener('DOMContentLoaded', () => document.body.append(Object.assign(document.createElement('p'), { textContent: 'Claim your free VPN config today' })));"),
+    'kpis': Fault('the fifth figure hidden', css='[data-testid="kpis"] > :nth-child(5) { display: none !important; }'),
+    'numbers': Fault('a first load 3 KB heavier than the case study says', routes=[
+        ('**/lab/admin/?*', lambda html: html.replace('</head>', '<script src="./assets/zz-extra.js"></script></head>')),
+        ('**/lab/admin/assets/zz-extra.js', 'var extra = "' + base64.b64encode(os.urandom(3 * 1024)).decode() + '";')]),
 }
 
 CHECKS = [('hosts', check_hosts), ('render', check_render), ('csv', check_csv), ('palette', check_palette), ('theme_lang', check_theme_lang),
           ('overflow', check_overflow), ('phone_a11y', check_phone_a11y), ('motion', check_motion), ('entry', check_entry),
           ('persist', check_persist), ('layout', check_layout), ('bundle', check_bundle), ('keyboard', check_keyboard),
-          ('names', check_names), ('labels', check_labels)]
+          ('names', check_names), ('labels', check_labels), ('words', check_words), ('kpis', check_kpis), ('numbers', check_numbers)]
 
 async def main():
     results, failed = [], 0
