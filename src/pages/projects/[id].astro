@@ -4,6 +4,7 @@ import { getCollection, render } from 'astro:content';
 import Tag from '../../components/Tag.astro';
 import Arrow from '../../components/Arrow.astro';
 import { demoLabel, isLocal } from '../../data/links';
+import { lastWord } from '../../data/title';
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
   return projects.map((project) => ({ params: { id: project.id }, props: { project } }));
@@ -21,6 +22,7 @@ const tile = (k: string) => (halves.length % 2 === 1 && k === halves[halves.leng
 // the next project, by order, wrapping round: no case study ends in a dead end
 const all = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const next = all[(all.findIndex((x) => x.id === project.id) + 1) % all.length];
+const [nextHead, nextLast] = lastWord(next.data.title);
 import { statusState } from '../../data/status';
 ---
 <Base title={p.title} description={p.summary} back={{ href: '/projects/', label: 'Work' }}>
@@ -49,7 +51,7 @@ import { statusState } from '../../data/status';
   <nav class="next" aria-label="Next project">
     <a class="next-card" href={`/projects/${next.id}/`} style={next.data.accent ? `--accent:${next.data.accent}` : undefined}>
       <span class="next-label">Next project</span>
-      <span class="next-title">{next.data.title}<Arrow id={`n-${next.id}`} /></span>
+      <span class="next-title">{nextHead}<span class="tw">{nextLast}<Arrow id={`n-${next.id}`} /></span></span>
       <span class="next-sum">{next.data.summary}</span>
     </a>
   </nav>

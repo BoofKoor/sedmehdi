@@ -6,19 +6,20 @@ import Arrow from './Arrow.astro';
 import Tag from './Tag.astro';
 import { statusState } from '../data/status';
 import { demoLabel } from '../data/links';
+import { lastWord } from '../data/title';
 interface Props { projects: CollectionEntry<'projects'>[] }
 const { projects } = Astro.props;
 const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? demoLabel(p.data.demo, Astro.site) : p.id);
 const n = String(projects.length).padStart(2, '0');
 ---
 <div class="stack">
-  {projects.map((project, i) => { const p = project.data, id = project.id; return (
+  {projects.map((project, i) => { const p = project.data, id = project.id, [head, last] = lastWord(p.title); return (
     <a class="st-card" href={`/projects/${id}/`} style={`--i: ${i};${p.accent ? ` --accent: ${p.accent};` : ''}${p.logo ? ` --tint: ${p.logo.tint}; --logo-bg: ${p.logo.bg};` : ''}`} aria-labelledby={`st-t-${id}`} aria-describedby={`st-d-${id}`}>
       <div class="st-inner">
         <div class="st-text">
           {p.logo && <span class="pj-logo" aria-hidden="true"><img src={p.logo.src} alt="" width="64" height="64" decoding="async" /></span>}
           <span class="st-num" aria-hidden="true">{String(i + 1).padStart(2, '0')} / {n}</span>
-          <span class="st-title vtt" id={`st-t-${id}`} style={`--vtt: vt-t-${id}`}>{p.title}<span class="vh"> case study</span><Arrow id={`s-${id}`} /></span>
+          <span class="st-title vtt" id={`st-t-${id}`} style={`--vtt: vt-t-${id}`}>{head}<span class="tw">{last}<span class="vh"> case study</span><Arrow id={`s-${id}`} /></span></span>
           <div class="st-desc" id={`st-d-${id}`}>
             <p class="st-sum">{p.summary}</p>
             <div class="st-meta">

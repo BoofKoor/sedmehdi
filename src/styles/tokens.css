@@ -1,6 +1,8 @@
 /* sed.mehdi design tokens, v4: roles, type styles and shapes follow Apple's Human Interface Guidelines.
    v4: dark background softened from #000000 to #121212 (secondary #1F1F1F, dividers #303030); Increase Contrast keeps pure black.
-   v5: status colours for the project status lights (live green, in-progress amber), 3:1 or more on both surfaces of each theme. */
+   v5: status colours for the project status lights (live green, in-progress amber), 3:1 or more on both surfaces of each theme.
+   v6: light link text deepened from #D33F41 (4.61 on the page, 4.19 on the second surface) to #C9393C: the phone fact tiles
+       put links on #F4F4F4, where 4.19 fell short of 4.5. */
 :root {
   /* color roles (HIG-style semantic names) */
   --color-background: #FFFFFF;
@@ -10,7 +12,7 @@
   --color-separator: #E2E2E2;           /* decorative dividers only */
   --color-separator-control: #8A8A8A;   /* control borders, 3:1 or more */
   --color-tint: #EA5555;                /* brand accent: graphics, large text, the wordmark dot */
-  --color-tint-text: #D33F41;           /* links, small tinted text, filled button */
+  --color-tint-text: #C9393C;           /* links, small tinted text: 5.08 on #FFF, 4.62 on #F4F4F4 */
   --color-on-tint: #FFFFFF;
   --color-destructive: #B42318;
   /* status lights: graphics only, the status is always written next to them. HIG's #34C759 / #FF9500 are 2.2:1 on white,
