@@ -442,8 +442,10 @@ async def check_motion(browser, fault=None):
     return problems
 
 
+# The site's own bars (the header, the phone's tab bar) float over every card by design, and the audit's REACH pass
+# holds that nothing stays under them; counted here, the tab bar read as three links drawn over the Work page's cards.
 CARDS = r"""() => { const R = e => e.getBoundingClientRect();
-  const links = [...document.querySelectorAll('a[href]')].filter(a => a.getClientRects().length), overlaps = [];
+  const links = [...document.querySelectorAll('a[href]')].filter(a => a.getClientRects().length && !a.closest('.bar, .tabbar')), overlaps = [];
   for (const c of document.querySelectorAll('.st-card, .fr-card')) { if (!c.getClientRects().length) continue; const r = R(c);
     for (const a of links) { if (a === c || c.contains(a) || a.contains(c)) continue; const b = R(a);
       if (b.left < r.right - 1 && b.right > r.left + 1 && b.top < r.bottom - 1 && b.bottom > r.top + 1) overlaps.push((a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30)); } }
