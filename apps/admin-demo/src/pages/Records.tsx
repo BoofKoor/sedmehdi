@@ -224,7 +224,9 @@ export default function Records({ index }: { index: 0 | 1 }) {
                       {cols.slice(0, 4).map((c) => (
                         <span key={c.id} className="min-w-0">
                           <span className="block text-content-muted">{tl(c.label)}</span>
-                          <span className="block truncate text-sm text-content">{renderCell(p, e, c, r.cells[c.id], st, now, locale)}</span>
+                          {/* A value wraps in its half of the card: cut to "Web Development Boo…" it lost the very
+                              word that told it apart (the record dialog is not where a name should first be whole). */}
+                          <span className="block text-sm text-content [overflow-wrap:anywhere]">{renderCell(p, e, c, r.cells[c.id], st, now, locale)}</span>
                         </span>
                       ))}
                     </span>

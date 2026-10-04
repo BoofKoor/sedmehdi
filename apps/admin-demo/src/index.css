@@ -28,6 +28,14 @@
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
+  /* Below md the header sticks to the top and the tab bar floats over the bottom: focus and anchor
+     scrolling stop clear of both. Without it a focused chart sat a third under the tab bar. */
+  @media (max-width: 767.98px) {
+    html {
+      scroll-padding-top: 4.5rem;
+      scroll-padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
   body {
     @apply bg-canvas font-sans text-content antialiased;
     margin: 0;

@@ -261,7 +261,7 @@ export function CommandPalette({ items, actions, onClose, tab }: { items: NavIte
                   )}
                 >
                   <Icon className={clsx("h-4 w-4 shrink-0", active ? "text-brand-700" : "text-content-muted")} />
-                  <span className="min-w-0 flex-1 truncate">
+                  <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
                     <span style={{ unicodeBidi: "isolate" }}>{c.label}</span>
                     {c.hint && <span className={clsx("ms-2 text-xs", active ? "text-brand-700" : "text-content-muted")}>{c.hint}</span>}
                   </span>

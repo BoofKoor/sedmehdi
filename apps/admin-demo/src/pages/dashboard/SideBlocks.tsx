@@ -72,7 +72,7 @@ export function HealthLine({ def, value, last }: { def: HealthDef; value: number
   return (
     <div className={clsx("flex items-center gap-[0.55rem] py-[0.62rem] text-[0.8rem]", !last && "border-b border-line")} data-health={def.id} data-degraded={bad}>
       <span className={clsx("h-2 w-2 shrink-0 rounded-full ring-[3px]", bad ? "bg-warning-500 ring-warning-500/20" : "bg-success-500 ring-success-500/20")} aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-content-muted">
+      <span className="min-w-0 flex-1 text-content-muted [overflow-wrap:anywhere]">
         {tl(def.name)}
         <span className="sr-only">: {t(bad ? "health.slow" : "health.ok")}</span>
       </span>

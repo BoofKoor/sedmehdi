@@ -69,7 +69,9 @@ export function BusinessPicker({ open, setOpen, onPick }: { open: boolean; setOp
           <span className="block truncate text-[0.95rem] font-bold text-content" style={{ unicodeBidi: "isolate" }}>
             {brand.name}
           </span>
-          <span className="block truncate text-[11px] text-content-muted">
+          {/* The kind wraps under the name on a narrow phone instead of ending in "…": at 320px
+              "Team workspace (SaaS)" was cut to "Team worksp…". */}
+          <span className="block text-[11px] leading-[1.25] text-content-muted [overflow-wrap:anywhere]">
             <span className="hidden sm:inline">{t("biz.label")} · </span>
             {tl(brand.kind)}
           </span>
@@ -114,7 +116,7 @@ export function BusinessPicker({ open, setOpen, onPick }: { open: boolean; setOp
                   <span className="block truncate text-sm font-semibold text-content" style={{ unicodeBidi: "isolate" }}>
                     {b.name}
                   </span>
-                  <span className="block truncate text-xs text-content-muted">{tl(b.kind)}</span>
+                  <span className="block text-xs text-content-muted [overflow-wrap:anywhere]">{tl(b.kind)}</span>
                 </span>
                 {selected && <Check className="h-4 w-4 shrink-0 text-brand-700" aria-hidden />}
               </li>

@@ -66,7 +66,7 @@ export function RecordDialog({ entity: e, row, status, now, onClose }: { entity:
               .map((c) => (
                 <div key={c.id} className="min-w-0">
                   <dt className="text-xs text-content-muted">{tl(c.label)}</dt>
-                  <dd className="mt-0.5 truncate text-sm text-content">{renderCell(p, e, c, row.cells[c.id], status, now, locale)}</dd>
+                  <dd className="mt-0.5 text-sm text-content [overflow-wrap:anywhere]">{renderCell(p, e, c, row.cells[c.id], status, now, locale)}</dd>
                 </div>
               ))}
           </dl>

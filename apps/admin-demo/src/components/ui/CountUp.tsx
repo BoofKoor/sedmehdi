@@ -6,10 +6,16 @@
  * demo's Latin face has proportional digits only (DM Sans ships no `tnum` in its latin subset), so
  * a counter laid out normally changes width on every frame and drags whatever sits beside it; the
  * ghost reserves the final width up front, and nothing around the number moves.
+ *
+ * The moving figure is pinned to the box's LEFT edge in both directions. Layout-shift scoring places
+ * a text box by its top-left corner, so a Persian figure, right-aligned and growing leftwards, moved
+ * that corner every frame and scored as a shift (0.011 on a phone) though nothing else moved. Pinned
+ * left it grows rightwards into the ghost's box and ends exactly on the ghost.
  */
 import { useEffect, useRef, useState } from "react";
 
 import { useReducedMotion } from "@/hooks/media";
+import { dirFor } from "@/i18n";
 
 const DURATION = 650;
 const ease = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -55,8 +61,8 @@ export function CountUp({
           ink keeps it in the accessibility tree, where `visibility: hidden` would drop it). */}
       <span className={moving ? "text-transparent" : undefined}>{final}</span>
       {moving && (
-        <span aria-hidden className="absolute inset-0">
-          {format(Math.round(shown * 100) / 100)}
+        <span aria-hidden className="absolute inset-0 flex justify-start" dir="ltr">
+          <span dir={dirFor()}>{format(Math.round(shown * 100) / 100)}</span>
         </span>
       )}
     </span>

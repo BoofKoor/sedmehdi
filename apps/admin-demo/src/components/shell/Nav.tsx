@@ -60,13 +60,16 @@ export function BottomBar({ items }: { items: NavItem[] }) {
             current={item.active}
             aria-label={item.active ? undefined : item.label}
             data-nav={item.id}
+            // The open tab shows its whole name: capped at 6.5rem it read "Dashbo…" at 320px. Under 360px
+            // the closed tabs keep a 44px box (the touch minimum) and the name a 13px face, so the
+            // longest one ("Dashboard", «صورت‌حساب‌ها») still fits beside three closed tabs.
             className={clsx(
-              "flex h-12 min-w-12 items-center justify-center rounded-full transition-[background-color,padding,color] duration-300",
-              item.active ? "bg-surface px-4 text-content shadow-raised" : "px-3 text-content-muted",
+              "flex h-12 min-w-12 items-center justify-center rounded-full transition-[background-color,padding,color] duration-300 max-[359px]:min-w-11",
+              item.active ? "bg-surface px-4 text-content shadow-raised max-[359px]:px-3" : "px-3 text-content-muted max-[359px]:px-2.5",
             )}
           >
             <item.icon className={clsx("h-[22px] w-[22px] shrink-0", item.active && "text-brand-700")} aria-hidden />
-            {item.active && <span className="ms-2 max-w-[6.5rem] truncate text-sm font-semibold">{item.short}</span>}
+            {item.active && <span className="ms-2 whitespace-nowrap text-sm font-semibold max-[359px]:ms-1.5 max-[359px]:text-[13px]">{item.short}</span>}
           </Link>
         ))}
       </div>

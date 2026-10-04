@@ -69,13 +69,15 @@ export function BarList({
     <ul className="space-y-3" data-testid={testId} data-barlist>
       {items.map((it) => (
         <li key={it.label}>
-          <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-            <span className="min-w-0 truncate text-content">{it.label}</span>
+          {/* The name is the row's subject: it wraps, and when the figure and its note do not fit beside
+              it they drop to a line of their own (at 320px a funnel step read "Started a …"). */}
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
+            <span className="min-w-0 text-content [overflow-wrap:anywhere]">{it.label}</span>
             {/* Separate flex items, not one inline run: two numbers side by side are one run to the bidi
                 algorithm, so in Persian «۹۸۱» and «۸۷٫۳٪ …» were reordered into one figure, «۹۸۱۸۷٫۳٪», with
                 the gap outside them. A <bdi> does not settle it: holding only digits it resolves LTR, and its
                 margin lands on the wrong side. */}
-            <span className="flex shrink-0 items-baseline gap-1.5 tabular-nums text-content" data-barlist-value>
+            <span className="ms-auto flex shrink-0 items-baseline gap-1.5 tabular-nums text-content" data-barlist-value>
               <b className="font-semibold">{format(it.value)}</b>
               {share && total > 0 && <span className="text-xs text-content-muted">{formatPct((it.value / total) * 100)}</span>}
               {it.note && <span className="text-xs text-content-muted">{it.note}</span>}

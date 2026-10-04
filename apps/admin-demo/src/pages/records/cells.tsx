@@ -52,8 +52,8 @@ export function renderCell(p: BusinessProfile, e: EntityDef, col: ColumnDef, v: 
         <span className="flex min-w-0 items-center gap-2.5">
           <Avatar initials={person.initials[locale]} seed={person.handle} className={compact ? "h-9 w-9" : "h-8 w-8"} />
           <span className="min-w-0">
-            <span className="block truncate font-medium text-content">{person.name[locale]}</span>
-            <span className="block truncate text-xs text-content-muted" dir="ltr" style={{ unicodeBidi: "isolate" }}>
+            <span className="block font-medium text-content [overflow-wrap:anywhere]">{person.name[locale]}</span>
+            <span className="block text-xs text-content-muted [overflow-wrap:anywhere]" dir="ltr" style={{ unicodeBidi: "isolate" }}>
               {person.handle}
             </span>
           </span>

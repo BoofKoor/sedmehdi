@@ -3,6 +3,9 @@
  * its two rules: the LINE fades at both ends (seven days are a slice of a longer series), and the
  * BAND under the marked day does not fade (a marker is not a measurement), clipped to the region
  * under the curve so the curve is its top edge. Mirrored in Persian, like every time axis here.
+ *
+ * The band stops above the weekday labels: run to the foot of the frame, it put the marked day's
+ * own label on a 26% white wash, at 3.0:1 where every other label reads 4.5:1 or better.
  */
 import { useId } from "react";
 
@@ -15,6 +18,9 @@ const H = 138;
 const TOP = 30;
 const PLOT_H = 66;
 const PAD_X = 18;
+/** The weekday labels' baseline, and where the band ends above their tallest glyph. */
+const LABEL_Y = H - 8;
+const BAND_END = LABEL_Y - 14;
 
 export function HeroSparkline({
   values,
@@ -68,7 +74,7 @@ export function HeroSparkline({
         </clipPath>
       </defs>
       <g clipPath={`url(#${uid}-under)`}>
-        <rect x={hx - 13} y="0" width="26" height={H} rx="13" fill="#fff" opacity=".26" />
+        <rect x={hx - 13} y="0" width="26" height={BAND_END} rx="13" fill="#fff" opacity=".26" />
       </g>
       <path d={line} fill="none" stroke="#fff" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" mask={`url(#${uid}-mask)`} />
       <circle cx={hx} cy={hy} r="4.5" className="fill-hero-a" stroke="#fff" strokeWidth="2.25" />
@@ -82,7 +88,7 @@ export function HeroSparkline({
         </g>
       )}
       {labels.map((label, i) => (
-        <text key={i} x={x(i).toFixed(1)} y={H - 8} textAnchor="middle" fontSize="9.5" fill="#fff" fontWeight={i === hi ? 700 : 400}>
+        <text key={i} x={x(i).toFixed(1)} y={LABEL_Y} textAnchor="middle" fontSize="9.5" fill="#fff" fontWeight={i === hi ? 700 : 400}>
           {label}
         </text>
       ))}

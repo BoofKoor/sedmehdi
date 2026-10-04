@@ -200,7 +200,9 @@ function TopCard({ icon: Icon, label, scope, headline, value, unit, mono, loadin
           {loading ? (
             <Skeleton className="mt-1 h-[18px] w-24" />
           ) : (
-            <div className={clsx("truncate text-sm font-bold text-content", mono && "font-mono text-[12.5px]")} dir={mono ? "ltr" : undefined} style={mono ? { unicodeBidi: "isolate" } : undefined}>
+            // The leader is what the card is about: it wraps rather than ending in "…" (a course name
+            // lost its last word at 1024).
+            <div className={clsx("text-sm font-bold leading-snug text-content [overflow-wrap:anywhere]", mono && "font-mono text-[12.5px]")} dir={mono ? "ltr" : undefined} style={mono ? { unicodeBidi: "isolate" } : undefined} data-top-head>
               {headline}
             </div>
           )}
