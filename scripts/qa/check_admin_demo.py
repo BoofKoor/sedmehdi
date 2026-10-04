@@ -719,8 +719,9 @@ async def check_labels(browser, fault=None):
 # The vocabulary of the business the demo no longer models, in both languages, whole words only (so "configuration"
 # and "trialled" are not hits, and neither is anything inside another word).
 RETIRED = re.compile(r'\b(vpn|configs?|claim(s|ed|ing)?|squads?|trials?)\b|کانفیگ|آزمایشی|وی‌پی‌ان|فیلترشکن|اسکواد', re.I)
-# The one place the old id may stay: the alias that opens the hosting business for it (index.html and the bundle).
-ALIAS = re.compile(r"""["']?vpn["']?\s*:\s*["']hosting["']""")
+# The one place the old id may stay: the alias that opens the hosting business for it (index.html and the bundle,
+# whose minifier writes the string in backticks: {vpn:`hosting`}).
+ALIAS = re.compile(r"""["'`]?vpn["'`]?\s*:\s*["'`]hosting["'`]""")
 
 WORDS = r"""() => { const bits = [document.title, document.body.innerText];
   for (const e of document.querySelectorAll('[aria-label], [title], [placeholder], [alt]'))
