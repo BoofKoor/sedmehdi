@@ -228,6 +228,15 @@ FOCUS = r"""() => { const a = document.activeElement; if (!a || a === document.b
   const cls = under ? ((typeof under.className === 'string' && under.className.split(' ')[0]) || under.tagName.toLowerCase()) : null;
   return { key: name + '|' + [r.left, r.top, r.width, r.height].map(Math.round).join(','), name, ring, seen, total, under: cls, off: r.bottom < 0 || r.top > H || r.right < 0 || r.left > W }; }"""
 
+# After a Tab, wait until whatever scrolls the focused element into view has landed: the element's scrolling ancestors
+# and the page stay put for three frames (at most a second). Measured the instant the key was pressed, a carousel that
+# brings its card in with a smooth scroll read as focus hidden, while one that never scrolled (B2) still does after.
+SETTLE = r"""async () => { const a = document.activeElement; if (!a) return; const frame = () => new Promise(r => requestAnimationFrame(r));
+  const boxes = [document.scrollingElement]; for (let n = a.parentElement; n; n = n.parentElement) { const o = getComputedStyle(n); if (/(auto|scroll)/.test(o.overflowX + o.overflowY)) boxes.push(n); }
+  const pos = () => boxes.map(b => b.scrollLeft + ',' + b.scrollTop).join('|');
+  await frame(); await frame(); let last = pos(), still = 0;
+  for (let i = 0; i < 60 && still < 3; i++) { await frame(); const p = pos(); still = p === last ? still + 1 : 0; last = p; } }"""
+
 # at the end of the page (every scroller at its end), a control whose centre is still under a fixed bar cannot be reached
 REACH = r"""async () => { const W = innerWidth, H = innerHeight;
   const bar = e => { for (let n = e; n && n.nodeType === 1; n = n.parentElement) { const q = getComputedStyle(n).position; if (q === 'fixed') return n;
@@ -265,7 +274,7 @@ async def tab_walk(pg, record, limit):
     await pg.evaluate(TOP); await pg.evaluate("document.activeElement && document.activeElement.blur && document.activeElement.blur()")
     seen = set()
     for _ in range(limit):
-        await pg.keyboard.press('Tab'); f = await pg.evaluate(FOCUS)
+        await pg.keyboard.press('Tab'); await pg.evaluate(SETTLE); f = await pg.evaluate(FOCUS)
         if not f: continue
         if f['key'] in seen: break
         seen.add(f['key'])
