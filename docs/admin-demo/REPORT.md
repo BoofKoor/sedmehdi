@@ -1,528 +1,470 @@
-# گزارش دموی پنل مدیریت (`/lab/admin/`)
+# گزارش دور دوم: Spindle Admin Kit
 
-پنل مدیریت GozarX حالا به‌شکل یک کیت قابل‌برندسازی (white-label) با دادهٔ ساختگی، داخل پورتفولیو در مسیر `/lab/admin/` منتشر می‌شود. یک کد برای پنج کسب‌وکار کار می‌کند: سرویس VPN، فضای کار تیمی (SaaS)، فروشگاه آنلاین لوازم خانه، آکادمی آنلاین و چاپخانهٔ چاپ‌وارسال. همه‌چیز از فایل‌های استاتیک و داخل مرورگر اجرا می‌شود: نه API هست، نه ورود، نه هیچ درخواستی به میزبان دیگر.
+در این دور سه کار انجام شد:
 
-- شاخه: `feat/admin-demo`، با PR به `baseline`: [BoofKoor/sedmehdi#1](https://github.com/BoofKoor/sedmehdi/pull/1)
-- اجرای محلی: `npm install`، بعد `npm run build` و سرو کردن `dist/` (مثلاً `python3 -m http.server 4321 --directory dist`)، و باز کردن `http://localhost:4321/lab/admin/?profile=vpn`.
-- بررسی‌ها: `npm run test:demo` (تست‌های واحد) و `python3 scripts/qa/check_admin_demo.py http://localhost:4321 --prove` (بررسی‌های مرورگر، هر کدام اول روی صفحهٔ خراب و بعد روی صفحهٔ درست).
+- **(الف) پروفایل سرور:** کسب‌وکار VPN از دمو کنار رفت و جایش Nodemill آمد، یک فروشندهٔ سرور ابری و مجازی.
+- **(ب) پروژهٔ مستقل:** پنل مدیریت حالا در سایت پروژهٔ خودش است، با نام Spindle Admin Kit.
+- **(ج) ممیزی و رفع باگ:** سایت و دمو در هشت عرض، دو تم و دو زبان ممیزی شدند. برای هر باگ اول تستی نوشته شد که روی وضعیت خراب شکست بخورد، بعد اصلاح آمد، بعد همان تست پاس شد.
+
+یک ابزار هم اضافه شد: `npm run demo:single`، نسخهٔ تک‌فایلی دمو برای پیش‌نمایش آفلاین.
+
+- **شاخه:** `feat/admin-demo`
+- **PR:** [BoofKoor/sedmehdi#1](https://github.com/BoofKoor/sedmehdi/pull/1)
+- **گزارش دور اول:** [REPORT-round1.md](REPORT-round1.md)
+- **اجرای محلی:**
+  1. `npm install`
+  2. `npm run build`
+  3. `python3 scripts/qa/serve.py dist 4321`
+  4. باز کردن `http://localhost:4321/lab/admin/`
+
+  کسب‌وکار پیش‌فرض Nodemill است و `?profile=vpn` هم همان را باز می‌کند. `serve.py` مثل nginx سایت برای مسیر ناموجود `404.html` را برمی‌گرداند.
 
 ---
 
-## ۱. برنامهٔ تأییدشده و انحراف‌ها
+## ۱. کامیت‌ها
 
-### برنامهٔ تأییدشده (خلاصه)
+ترتیب کامیت‌ها همان روش کار است: اول تست‌ها، بعد اصلاح‌ها. کامیت‌های میانی کد، از `9dbf093` تا `df8510d`، هر کدام در یک worktree جدا بررسی شدند (`tsc`، ۱۲۷ تست واحد و `astro build`) و همه سالم بودند. کامیت‌های بعدی یا فقط اسکریپت QA را عوض کرده‌اند یا روی همان درخت اصلی build و تست شده‌اند.
 
-- **جای کد:** یک workspace جدا در `apps/admin-demo` (React 18، Vite 8، Tailwind 3، TypeScript). `npm run build` اول `astro build` و بعد دمو را در `dist/lab/admin/` می‌سازد، با مسیرهای نسبی (`base: "./"`). خروجی خود پورتفولیو بایت‌به‌بایت همان می‌ماند (جز پوشهٔ `lab/` و تغییرهای ادغام در بخش ۱۱).
-- **مسیریابی hash** (`#/`، `#/growth`، `#/retention`، `#/behaviour`، دو جدول هر کسب‌وکار مثل `#/users` و `#/servers`، و `#/health`)، چون پشت فایل‌های استاتیک هیچ rewrite سروری نیست.
-- **یک `BusinessProfile` برای هر کسب‌وکار** که برند، منو، KPIها، سری‌های نمودار، محورهای رادار، آمار زنده، بررسی‌های سلامت، ستون‌های جدول و همهٔ متن‌ها را به انگلیسی و فارسی تعیین می‌کند.
-- **generator قطعی (seeded)** برای هر پروفایل و بازه، با روند و ریتم هفتگی، «امروز، هنوز در جریان» به‌صورت خط‌چین، و مقایسه با بازهٔ قبلی هم‌طول.
-- **نمودارهای دست‌ساز SVG** از خود پنل GozarX (sparkline قهرمان، رادار، روند)، به‌همراه کیت UI، پوستهٔ کنسول و پالت Nocturne که برای هر برند دوباره رنگ‌دهی می‌شود.
-- **QA:** اسکریپت Playwright با حالت `--prove` که خطا را از بیرون تزریق می‌کند (init script، CSS، بازنویسی پاسخ)؛ هیچ «کلید خرابی» داخل کد منتشرشده نیست.
-
-### تصمیم‌های پیام دوم و اجرای آن‌ها
-
-| تصمیم | چه شد |
+| کامیت | چه کرد |
 |---|---|
-| همهٔ پیام‌ها و REPORT.md به فارسی؛ کد، کامیت و کامنت انگلیسی | انجام شد. |
-| سایت zip بدون تغییر در `baseline`؛ PR از `feat/admin-demo` به `baseline`؛ بدون `main` | `baseline` با یک کامیت (`3fea190 Import the site as delivered (v0.13.2)`) push شد؛ `main` ساخته یا push نشد. |
-| `preview/` در `.gitignore` و کامیت‌نشدن فایل پیش‌نمایش | `preview` از قبل در `.gitignore` خود zip بود (خط `preview`)، پس تغییری لازم نشد و فایل پیش‌نمایش هیچ‌وقت کامیت نشد. |
-| نام شاخه `feat/admin-demo` | push به همین شاخه کار کرد؛ شاخهٔ پیش‌فرض این session (`claude/gozarx-admin-demo-0mlwl4`) استفاده نشد. |
-| تم: کلید مشترک `sm-theme` | دمو در اولین بار تم ذخیره‌شدهٔ پورتفولیو را می‌خواند، تغییرش را در همان کلید می‌نویسد، و تغییر تم در تب دیگرِ پورتفولیو را هم زنده دنبال می‌کند (رویداد `storage`). `?theme=` بدون ذخیره اعمال می‌شود. |
-| نام برندها: چک در همان صنعت | سه نام اول عوض شد؛ جزئیات و منابع در بخش ۱۴. هر پنج برند در یک فایل‌اند: `apps/admin-demo/src/profiles/brands.ts`. |
-| دکمهٔ Live demo روی کارت Work با چهار شرط پذیرش | همهٔ شرط‌ها در هر پنج عرض و هر دو تم برقرار است (جدول بخش ۱۱)؛ راه جایگزین لازم نشد. `stack_check` بدون تغییر رد می‌شود. |
-| CSV جدول‌ها = همهٔ ردیف‌های فیلترشده و مرتب‌شده | انجام شد و بررسی `csv` آن را اندازه می‌گیرد (۱۳۵ ردیف از چند صفحه، به همان ترتیب صفحه). |
-| پیش‌فرض‌ها: `?profile=vpn`، zip پیوست نه کامیت، بدون نسخهٔ single-file از دمو | انجام شد؛ `scripts/single-file.mjs` پوشهٔ `lab/` را عمداً کنار می‌گذارد و پیوندهای `/lab/` را به نشانی کامل سایت تبدیل می‌کند. |
-| ناسازگاری AGPL-3.0 و نبود LICENSE | در هیچ ریپویی تغییری داده نشد؛ در بخش ۱۳ آمده است. |
-| جدول قبل/بعد چهار اسکریپت QA و اندازهٔ gzip هر chunk اولین رندر | بخش‌های ۱۰ و ۷. |
-
-### انحراف‌ها از برنامه، و دلیل هر کدام
-
-1. **Recharts کامل کنار گذاشته شد.** پنل GozarX برای نمودارهای معمولی‌اش از recharts استفاده می‌کرد. در دمو همهٔ نمودارها دست‌ساز SVG شدند (chunk نمودار پنل اصلی، طبق CLAUDE.md خود GozarX، ۴۳۴ کیلوبایت خام بود؛ کل JS دمو با همهٔ صفحه‌ها ۱۱۵٫۰ کیلوبایت gzip است، بخش ۷)، و یک موتور نمودار زمانی مشترک (`TrendPanels`) crosshair، tooltip، صفحه‌کلید و آینه‌شدن RTL را یک‌جا دارد.
-2. **بدون محور دوگانه.** نمودار اصلی GozarX دو محور y داشت. اینجا دو پنل هم‌تراز با یک crosshair و یک tooltip مشترک است: هر سنجه روی مقیاس خودش خواناست و خواننده تقاطع دو خط با مقیاس‌های بی‌ربط را معنادار نمی‌خواند.
-3. **دونات حذف شد**؛ سهم‌ها با میله‌های رتبه‌دار (BarList) نشان داده می‌شوند که روی یک خط پایه مقایسه‌پذیرند.
-4. **«جدید و بازگشتی» از ستون‌های پشته‌ای به دو پنل ستونی تبدیل شد.** کاربران جدید فقط چند درصد کل روزند (در SaaS حدود ۱٪) و روی پشته به یک نوار نازکِ نخواندنی تبدیل می‌شدند.
-5. **کنترل بازه در یک ردیف بالای هر چیزی است که تحت تأثیرش است** (کنار زبانه‌های داشبورد)، و نمودار تجمعی رشد چون «خط» است (نه ناحیه)، محدودهٔ خودش را قاب می‌گیرد و از صفر شروع نمی‌شود؛ ناحیه‌ها و ستون‌ها همیشه از صفر.
-6. **نمودارها در فارسی آینه می‌شوند** (قدیمی‌ترین روز سمت راست، برچسب‌های محور y سمت راست)، طبق خواستهٔ «mirrored layout, charts». GozarX محور زمان را در RTL هم چپ‌به‌راست نگه می‌داشت.
-7. **عنوان صفحه از نوار بالا به خود صفحه آمد**، چون نوار بالا حالا جای انتخاب‌گر کسب‌وکار است که باید دیده شود.
-8. **پنل کناری (نرخ‌ها، آمار زنده، سلامت) روی هر چهار زبانهٔ داشبورد می‌ماند**، نه فقط «نمای کلی» مثل GozarX، چون آمدن و رفتنش عرض کنسول را عوض می‌کرد و بررسی layout shift آن را ۰٫۱۷ اندازه گرفت.
-9. **کتابخانهٔ toast (sonner) حذف شد** و یک toaster کوچک ساخته شد که ناحیهٔ `role="status"` را از قبل mount می‌کند (اعلانی که همراه ناحیه‌اش درج شود خوانده نمی‌شود) و جای نوار پایین موبایل را می‌داند.
-10. **رنگ جوهر وضعیت‌ها کمی تیره‌تر (روشن) و روشن‌تر (تیره) شد**، چون بررسی کنتراست نشان «برطرف شد» را روی صفحهٔ برجستهٔ کارت ۴٫۴۷:۱ اندازه گرفت. تست پالت حالا این زوج را هم می‌سنجد.
-11. **یک ردیف سلامت VPN عوض شد:** «Conversion, {days} days» یک سنجهٔ کسب‌وکار بود نه سرویس؛ جایش «Subscription links» آمد تا صفحهٔ سلامت فقط سرویس‌ها را داشته باشد.
-12. **حالت دادهٔ دمو (زنده/خالی/خطا/کند) ذخیره نمی‌شود**؛ با بارگذاری دوباره به «زنده» برمی‌گردد تا کسی در حالت خطا گیر نکند. بازهٔ زمانی با کلید جدید `sm-admin-range` ذخیره می‌شود.
-13. **فونت فارسی روی صفحهٔ انگلیسی هم یک فایل بار می‌کند** (`Vazirmatn-Medium.woff2`، حدود ۵۰ کیلوبایت)، چون برچسب «فا» در کلید زبان به خط خودش نوشته می‌شود.
-14. **برچسب محورهای رادار HTML است، نه متن SVG.** در GozarX برچسب‌ها کوتاه و ثابت بودند. اینجا هر کسب‌وکار نام نرخ‌هایش را خودش می‌دهد، و متن SVG نه می‌شکند نه جایش را می‌داند (بخش ۸).
+| `a3c5f9f` | QA گسترده شد تا باگ‌ها را قبل از اصلاح ببیند. روی نسخهٔ قبل شکست می‌خورد (بخش ۳). |
+| `9dbf093` | Nodemill جای کسب‌وکار VPN آمد؛ هر کسب‌وکار یک KPI پنجم گرفت؛ `?profile=vpn` به Nodemill می‌رود. |
+| `a3f801a` | باگ‌های نمایشی دمو: B4، B5، B6، B8، B9، B10، B11 و جابه‌جایی شمارش عدد در فارسی. |
+| `e1631dd` | پنل مدیریت پروژهٔ مستقل Spindle Admin Kit شد؛ pill و دکمهٔ «Live Demo» موبایل حذف شدند (B3 و B7 با آن‌ها رفتند). |
+| `df8510d` | باگ‌های نمایشی سایت: B1، B2، B12 و B13. |
+| `f9eba84` | `npm run demo:single` و تست آن روی `file://`. |
+| `d97348b` | عنوان یک‌خطی کارت‌ها دوباره وسط کاشی لوگو قرار گرفت. این پسرفتِ اصلاح B12 بود و تست تازه‌اش اول روی کامیت قبلی شکست خورد. |
+| `fb35476` | ممیزی حالا ellipsis داخل پنل اسکرول‌دار را هم می‌بیند. پیش از این B5 را روی دسکتاپ نمی‌دید (بخش ۹). |
+| `fb2581b` | بررسی `entry` دیگر نوار پایین موبایل را لینکِ روی کارت نمی‌شمرد (بخش ۳). |
+| `ada7da9` | بررسی `words` نگاشت `vpn` را به همان شکلی هم می‌شناسد که minifier می‌نویسد: ``{vpn:`hosting`}`` (بخش ۳). |
+| `522b686` | گام فوکوس ممیزی بعد از هر Tab صبر می‌کند تا اسکرولی که عنصر را به دید می‌آورد تمام شود (بخش ۹). |
+| (کامیت گزارش) | همین گزارش، اسکرین‌شات‌هایش و به‌روزرسانی READMEها. |
 
 ---
 
-## ۲. ساختار فایل‌ها
+## ۲. باگ‌ها
 
-### اپ دمو: `apps/admin-demo/` (همه جدید)
+ستون «تست» نام بررسی‌ای است که باگ را می‌گیرد. هر کدام روی وضعیت خراب شکست خورد و بعد از اصلاح پاس شد؛ عددها در بخش ۳ است. B12 و B13 در خود ممیزی پیدا شدند و در فهرست Phase 0 نبودند. B2′ و B12′ پسرفت اصلاح‌های خودم بودند که تست‌ها گرفتند.
 
-```
-apps/admin-demo/
-├── public/fonts/            DM Sans (Latin) + Vazirmatn (3 weights), self-hosted, with their OFL licences
-├── scripts/
-│   ├── palette.mjs          OKLCH palette per brand, light + dark (pure functions)
-│   ├── gen-palettes.mjs     writes src/theme/palettes.css
-│   └── shots.py             the screenshots in docs/admin-demo/screens/
-├── src/
-│   ├── profiles/            types.ts (the BusinessProfile schema), brands.ts (all five brands),
-│   │                        vpn.ts, saas.ts, ecommerce.ts, education.ts, print.ts, index.ts
-│   ├── data/                prng.ts, calendar.ts, model.ts (the generator), gen.ts, names.ts,
-│   │                        dashboard.ts, entities.ts, health.ts, csv.ts, exports.ts, generator.test.ts
-│   ├── state/               AppState.tsx (business, language, theme, range, data mode, URL + storage),
-│   │                        Live.tsx (the live ticker), edits.ts (tab-only record edits), storage.ts
-│   ├── components/
-│   │   ├── charts/          geometry.ts (+ test), TrendPanels, HeroSparkline, RadarRates, Heatmap, Small, ChartCard
-│   │   ├── shell/           BusinessPicker, CommandPalette, DemoMenu, Nav, Controls, HelpDialogs, BrandMark,
-│   │   │                    chrome.tsx (side panel slot), nav.ts, useShortcuts.ts
-│   │   └── ui/              Avatar, Badge, Button, Card, CountUp, Dialog, NavTabs, PageTitle, Popover,
-│   │                        Segmented, States (skeleton/empty/error), Table, Toast, useFocusTrap
-│   ├── pages/
-│   │   ├── Dashboard.tsx    tabs + range + CSV + side panel
-│   │   ├── dashboard/       Overview, Growth, Retention, Behaviour (lazy), SideBlocks
-│   │   ├── Records.tsx      the two tables (lazy) + records/RecordDialog.tsx, records/cells.tsx
-│   │   └── Health.tsx       service checks, 90-day uptime, incidents (lazy)
-│   ├── i18n/                index.ts (t(), L pairs), ui.ts (the shell's own strings, en + fa)
-│   ├── lib/                 format.ts (+ test), metric.ts, focusTitle.ts
-│   ├── hooks/               media.ts, useDemoQuery.ts (simulated loading / error / empty)
-│   ├── theme/               palettes.css (generated), palette.test.ts
-│   ├── App.tsx  main.tsx  router.tsx  index.css
-├── index.html               pre-paint bootstrap: theme, language, direction, font preload
-├── vite.config.ts           base "./", output dist/lab/admin/, named chunks (react, vendor, data)
-├── tailwind.config.js  postcss.config.js  tsconfig.json  tsconfig.test.json  package.json
-└── README.md
-```
+| # | باگ | کجا | علت | اصلاح | تست | تصویر |
+|---|---|---|---|---|---|---|
+| B1 | کنتراست لینک‌ها روی کاشی‌های مشخصات در موبایل ۴٫۱۹:۱ بود (حداقل ۴٫۵) | کیس‌استادی‌ها، ≤۷۲۰، تم روشن | `--color-tint-text` (`#D33F41`) فقط روی سفید ۴٫۶۱ است و کاشی `#F4F4F4` است | توکن تم روشن `#C9393C` شد: ۵٫۰۸ روی سفید، ۴٫۶۲ روی `#F4F4F4` | `check_site.py` (`tokens_check`، لینک روی پس‌زمینهٔ دوم)؛ `audit.py` (`contrast`) | [قبل](screens-v2/bugs/B1-before.webp) · [بعد](screens-v2/bugs/B1-after.webp) |
+| B2 | با Tab کارت دوم carousel فوکوس می‌گرفت ولی بیرون صفحه می‌ماند، با حلقهٔ فوکوسش، و نقطه‌ها هنوز کارت اول را نشان می‌دادند | Home، ۳۶۰ تا ۷۲۰ | Chromium عنصری را که کمی پیداست هنگام فوکوس اسکرول نمی‌کند | با `focusin`، یک فریم بعد، کارتی که هنوز کامل پیدا نیست وسط carousel می‌آید (با Reduce Motion بی‌انیمیشن) | `check_site.py` (`carousel_focus_check`: ۹ نقطهٔ `elementFromPoint` روی خود کارت، و نقطهٔ درست)؛ `audit.py` (`focus-hidden`) | [قبل](screens-v2/bugs/B2-before.webp) · [بعد](screens-v2/bugs/B2-after.webp) |
+| B2′ | اصلاح اول B2 کارت سوم را در ۳۹۰، ۳۶۰ و ۳۲۰ بیرون صفحه گذاشت | Home، موبایل | اسکرولی که داخل خود رویداد focus صادر شود، اسکرول خود Chromium را لغو می‌کرد | اسکرول یک فریم صبر می‌کند و فقط کارتی را جابه‌جا می‌کند که هنوز کامل پیدا نیست | همان `carousel_focus_check`: ۱۶ خطا روی اصلاح اول، ۰ بعد | — |
+| B3 | نقطهٔ سبز دکمهٔ «Live Demo» زیر کارت GozarX کنتراست ۲٫۰۲:۱ داشت (حداقل ۳) | Work، ≤۷۲۰، تم روشن | `#30D158` روی سفید | دکمه با pill حذف شد (بخش ۵) | `audit.py` (`ui-contrast`) | [قبل](screens-v2/bugs/B3-before.webp) · [بعد](screens-v2/bugs/B3-after.webp) |
+| B4 | برچسب روز علامت‌خورده در sparkline کاشی اصلی کنتراست ۳٫۰۳ تا ۳٫۱۵:۱ داشت | داشبورد دمو، همهٔ کسب‌وکارها، هر دو زبان و تم | نوار سفید ۲۶٪ زیر روز علامت‌خورده تا پایین قاب می‌رفت و ردیف برچسب‌ها را هم می‌پوشاند | نوار ۱۴ پیکسل بالای خط پایهٔ برچسب‌ها تمام می‌شود | `audit.py` (`contrast`، با شکل SVG زیر متن SVG)؛ `check_admin_demo.py` (`phone_a11y`) | [قبل](screens-v2/bugs/B4-before.webp) · [بعد](screens-v2/bugs/B4-after.webp) |
+| B5 | نام اول کارت «Top course» با «…» بریده می‌شد («Data Analysis with P…») | دمو، آکادمی، ۱۰۲۴ | `truncate` روی همان متنی که کارت درباره‌اش است | متن می‌شکند (`overflow-wrap: anywhere`) | `audit.py` (`clipped`)؛ از `fb35476` به بعد روی دسکتاپ هم (بخش ۹) | [قبل](screens-v2/bugs/B5-before.webp) · [بعد](screens-v2/bugs/B5-after.webp) |
+| B6 | عنصر فوکوس‌شده تا یک‌سوم زیر نوار پایین می‌رفت (مثلاً نمودار روند) | دمو، زیر ۷۶۸ (ممیزی در ۷۲۰، ۳۹۰ و ۳۲۰ دیدش) | دمو `scroll-padding` نداشت؛ سایت داشت | `scroll-padding-top` و `scroll-padding-bottom` به اندازهٔ هدر و نوار پایین، به‌اضافهٔ safe-area | `audit.py` (`focus-partly-hidden` و `REACH`) | [قبل](screens-v2/bugs/B6-before.webp) · [بعد](screens-v2/bugs/B6-after.webp) |
+| B7 | ناحیهٔ کلیک pill «Live Demo» داخل ناحیهٔ کلیک کارت GozarX بود | Work، ≥۷۲۱ | pill لایه‌ای جدا روی کارت بود | pill حذف شد | `audit.py` (`hit-overlap`)؛ `check_admin_demo.py` (`entry`) | [قبل](screens-v2/bugs/B7-before.webp) · [بعد](screens-v2/bugs/B7-after.webp) |
+| B8 | مقدارهای کارت ردیف‌ها بریده می‌شد («Web Development Boo…»، «Dunmore Consulti…») | دمو، جدول‌ها، ۳۹۰ و ۳۲۰ | `truncate` در شبکهٔ دوستونهٔ کارت | مقدار و نام و handle شخص می‌شکنند؛ پنجرهٔ رکورد هم | `audit.py` (`clipped`) | [قبل](screens-v2/bugs/B8-before.webp) · [بعد](screens-v2/bugs/B8-after.webp) |
+| B9 | زیرعنوان کسب‌وکار در نوار بالا بریده می‌شد («Team worksp…») | دمو، ۳۲۰ | `truncate` | زیرعنوان زیر نام می‌شکند؛ فهرست انتخاب‌گر هم | `audit.py` (`clipped`) | [قبل](screens-v2/bugs/B9-before.webp) · [بعد](screens-v2/bugs/B9-after.webp) |
+| B10 | برچسب تب باز نوار پایین بریده می‌شد («Dashbo…») | دمو، ۳۲۰ | سقف عرض `6.5rem` | سقف برداشته شد. زیر ۳۶۰ پیکسل فاصله‌ها کمتر و فونت ۱۳ پیکسل است و هر تب بستهٔ همچنان ۴۴ پیکسل جا دارد | `audit.py` (`clipped` و `target`) | [قبل](screens-v2/bugs/B10-before.webp) · [بعد](screens-v2/bugs/B10-after.webp) |
+| B11 | نام قدم‌های قیف بریده می‌شد («Started a …»، «Complete…») | دمو، Growth، ۳۲۰ | `truncate`؛ عدد و «of the step before» جای نام را می‌گرفتند | نام می‌شکند؛ عدد و زیرنویس وقتی جا نیست به خط خودشان می‌روند | `audit.py` (`clipped`) | [قبل](screens-v2/bugs/B11-before.webp) · [بعد](screens-v2/bugs/B11-after.webp) |
+| CLS | عدد در حال شمارش در فارسی هر فریم یک جابه‌جایی ثبت می‌کرد: ۰٫۰۰۹۰ تا ۰٫۰۱۰۲ در بارگذاری | دمو، فارسی، ۳۹۰ | امتیاز layout shift از گوشهٔ بالا-چپ جعبهٔ متن حساب می‌شود و عدد راست‌چین به چپ رشد می‌کرد | لایهٔ عدد متحرک به لبهٔ چپ جعبه سنجاق شد: به راست رشد می‌کند و دقیقاً روی عدد نهایی تمام می‌شود | `check_admin_demo.py` (`layout`: بیش از ۰٫۰۰۵ در فارسی شکست است)؛ `audit.py` (`CLS`) | — |
+| B12 | فلش بعد از عنوان بلند «Spindle Admin Kit» تا ۲۷۰ پیکسل دورتر از متن می‌افتاد، وسط ارتفاع کل بلوک | کارت‌های Spindle در Home و Work، کارت «پروژهٔ بعدی»، همهٔ عرض‌ها | عنوان یک ردیف flex بود؛ متنِ شکسته تمام عرض ردیف را می‌گرفت و فلش را به انتها می‌راند | عنوان متن معمولی با `text-wrap: balance` شد. آخرین کلمه و فلش یک جعبهٔ نشکن‌اند: «Spindle / Admin Kit ›» | `check_site.py` (`title_arrow_check`: فلش حداکثر ۲۴ پیکسل بعد از آخرین خط و روی همان خط) | [قبل](screens-v2/bugs/B12-before.webp) · [بعد](screens-v2/bugs/B12-after.webp) |
+| B12′ | بعد از اصلاح B12، عنوان یک‌خطی ۹ پیکسل (۱۴۴۰) تا ۱۷٫۵ پیکسل (۷۶۸) بالاتر از وسط کاشی لوگو بود | کارت‌های stack دسکتاپ | عنوانی که متن معمولی شده بود به بالای ردیف لوگو چسبید | عنوان در ردیف خودش وسط‌چین شد (`align-self: center`) | `check_site.py` (`title_logo_check`) | — |
+| B13 | متن کارت‌های stack پایین کارت بریده می‌شد. روی گوشی افقی (۸۴۴×۳۹۰) کارت ۱۷۴ پیکسل بود و متنش ۴۵۰ پیکسل جا می‌خواست، پس جز عنوان چیزی دیده نمی‌شد. در ۷۲۱ چیپ‌های کارت Spindle ۳۰ پیکسل بیرون می‌زد | Home و Work؛ گوشی افقی، پنجره‌های کوتاه و ۷۲۱ تا ۱۰۲۳ | ارتفاع کارت چسبان برابر ارتفاع صفحه منهای نوار و فاصله‌های stack است، هرقدر هم کم باشد؛ بین ۷۲۱ تا ۱۰۲۳ ستون متن از تصویر باریک‌تر بود | بین ۷۲۱ تا ۱۰۲۳ ستون متن پهن‌تر از تصویر شد. زیر ارتفاع 42.5em (۶۸۰ پیکسل با فونت پیش‌فرض) کارت‌ها دیگر نمی‌چسبند و به اندازهٔ متنشان‌اند. خلاصهٔ Spindle کوتاه‌تر شد | `check_site.py` (`card_fit_check`، از ۲۵۶۰ تا گوشی افقی ۸۱۲×۳۷۵) | ۷۲۱: [قبل](screens-v2/bugs/B13-721-before.webp) · [بعد](screens-v2/bugs/B13-721-after.webp)؛ گوشی افقی: [قبل](screens-v2/bugs/B13-844x390-before.webp) · [بعد](screens-v2/bugs/B13-844x390-after.webp) |
 
-### فایل‌های پورتفولیو که تغییر کردند یا اضافه شدند
+B13 فقط مال کارت Spindle نبود. روی نسخهٔ قبل هم بود: کارت GozarX روی گوشی افقی و در ۷۶۸×۷۲۰ و همهٔ کارت‌ها در ۷۲۱×۶۴۰ بریده می‌شدند (۳۶ خطای `card_fit_check` روی نسخهٔ قبل). سه چیز پیدایش کرد:
 
-| فایل | تغییر |
-|---|---|
-| `package.json`، `package-lock.json` | workspace `apps/admin-demo`؛ `build` حالا دمو را هم می‌سازد؛ اسکریپت‌های `dev:demo` و `test:demo`. |
-| `src/content.config.ts` | فیلد اختیاری `lab` (یک مسیر که با `/` شروع می‌شود). |
-| `src/content/projects/gozarx.md` | `lab: "/lab/admin/?profile=vpn"`. |
-| `src/pages/projects/[id].astro` | دکمهٔ «Try the Live Demo» وقتی پروژه `lab` دارد. |
-| `src/pages/projects/index.astro`، `src/components/WorkStack.astro`، `src/components/ProjectGrid.astro` | دکمهٔ «Live Demo» روی کارت Work (دسکتاپ: لایهٔ هم‌خانه با کارت؛ موبایل: زیر کارت). |
-| `src/styles/global.css` | `.st-lab`، `.st-lab-btn`، `.fr-lab`، `.case-lab` و قاعدهٔ reduced motion آن‌ها. |
-| `scripts/single-file.mjs` | پوشهٔ `lab/` را کنار می‌گذارد و پیوندهای `/lab/` را به نشانی کامل سایت می‌برد. |
-| `scripts/qa/check_single.py` | `lab/` را از فهرست صفحه‌های مورد انتظار کنار می‌گذارد (با توضیح در کد). |
-| `scripts/qa/audit.py` | `/lab/admin/` یک مسیر معتبر است؛ query در پیوندهای داخلی نادیده گرفته می‌شود (با توضیح در کد). |
-| `scripts/qa/check_admin_demo.py` | **جدید**: بررسی‌های مرورگرِ دمو (بخش ۸). |
-| `Dockerfile`، `.dockerignore`، `nginx.conf` | `npm ci` در Docker manifest workspace را هم می‌بیند؛ `node_modules` workspace وارد image نمی‌شود؛ کش یک‌ساله (immutable) برای فایل‌های hash‌دار `/lab/admin/assets/`. |
-| `README.md` | معرفی `apps/admin-demo` و دستورها. |
-| `docs/admin-demo/` | همین گزارش و اسکرین‌شات‌ها. |
+- عنوان دوخطی Spindle؛
+- خلاصهٔ بلندترش؛
+- یک بررسی که ارتفاع صفحه را هم عوض می‌کند، نه فقط عرض را.
+
+### تصویرهای قبل و بعد
+
+| | قبل | بعد |
+|---|---|---|
+| B1: لینک‌ها روی کاشی‌های مشخصات (۳۹۰، روشن) | <img src="screens-v2/bugs/B1-before.webp" width="300" alt="B1 before"> | <img src="screens-v2/bugs/B1-after.webp" width="300" alt="B1 after"> |
+| B2: Tab روی کارت دوم carousel (۷۲۰) | <img src="screens-v2/bugs/B2-before.webp" width="380" alt="B2 before"> | <img src="screens-v2/bugs/B2-after.webp" width="380" alt="B2 after"> |
+| B3: دکمهٔ «Live Demo» و نقطه‌اش زیر کارت GozarX (۳۹۰، روشن) | <img src="screens-v2/bugs/B3-before.webp" width="300" alt="B3 before"> | <img src="screens-v2/bugs/B3-after.webp" width="300" alt="B3 after"> |
+| B4: برچسب روز علامت‌خورده روی نوار sparkline (۳۹۰) | <img src="screens-v2/bugs/B4-before.webp" width="300" alt="B4 before"> | <img src="screens-v2/bugs/B4-after.webp" width="300" alt="B4 after"> |
+| B5: کارت «Top course» (۱۰۲۴، آکادمی) | <img src="screens-v2/bugs/B5-before.webp" width="260" alt="B5 before"> | <img src="screens-v2/bugs/B5-after.webp" width="260" alt="B5 after"> |
+| B6: نمودار فوکوس‌شده و نوار پایین (۳۹۰) | <img src="screens-v2/bugs/B6-before.webp" width="240" alt="B6 before"> | <img src="screens-v2/bugs/B6-after.webp" width="240" alt="B6 after"> |
+| B7: pill روی کارت GozarX (۱۴۴۰، تیره) | <img src="screens-v2/bugs/B7-before.webp" width="380" alt="B7 before"> | <img src="screens-v2/bugs/B7-after.webp" width="380" alt="B7 after"> |
+| B8: کارت یک ردیف دانشجو (۳۹۰) | <img src="screens-v2/bugs/B8-before.webp" width="300" alt="B8 before"> | <img src="screens-v2/bugs/B8-after.webp" width="300" alt="B8 after"> |
+| B9: زیرعنوان کسب‌وکار (۳۲۰، SaaS) | <img src="screens-v2/bugs/B9-before.webp" width="220" alt="B9 before"> | <img src="screens-v2/bugs/B9-after.webp" width="220" alt="B9 after"> |
+| B10: تب باز نوار پایین (۳۲۰) | <img src="screens-v2/bugs/B10-before.webp" width="260" alt="B10 before"> | <img src="screens-v2/bugs/B10-after.webp" width="260" alt="B10 after"> |
+| B11: قیف یادگیری (۳۲۰، آکادمی) | <img src="screens-v2/bugs/B11-before.webp" width="260" alt="B11 before"> | <img src="screens-v2/bugs/B11-after.webp" width="260" alt="B11 after"> |
+| B12: عنوان و فلش کارت Spindle (۱۴۴۰، تیره) | <img src="screens-v2/bugs/B12-before.webp" width="380" alt="B12 before"> | <img src="screens-v2/bugs/B12-after.webp" width="380" alt="B12 after"> |
+| B13: کارت Spindle در ۷۲۱×۹۰۰ | <img src="screens-v2/bugs/B13-721-before.webp" width="320" alt="B13-721 before"> | <img src="screens-v2/bugs/B13-721-after.webp" width="320" alt="B13-721 after"> |
+| B13: کارت GozarX روی گوشی افقی ۸۴۴×۳۹۰ (نوار بالای سایت برای عکس پنهان شده) | <img src="screens-v2/bugs/B13-844x390-before.webp" width="380" alt="B13-844x390 before"> | <img src="screens-v2/bugs/B13-844x390-after.webp" width="380" alt="B13-844x390 after"> |
 
 ---
 
-## ۳. منشأ کد: چه کپی شد، چه بازنویسی شد، چه حذف شد
+## ۳. QA: قبل و بعد
 
-مبدأ همه‌چیز `frontend/admin/src` در ریپوی GozarX (نسخهٔ `cd3e46c`) است. ریپوی GozarX دست نخورد (`git status` تمیز است).
+### سه اجرا
 
-| در GozarX | در دمو | وضعیت | چرا |
+| اجرا | کد | QA |
+|---|---|---|
+| QA قدیم، نسخهٔ قبل | `cbdb281`، سر PR پیش از این دور | اسکریپت‌های همان کامیت |
+| QA جدید، نسخهٔ قبل | `cbdb281` | اسکریپت‌های این دور (`a3c5f9f` به بعد) |
+| QA جدید، نسخهٔ نهایی | سر شاخه | اسکریپت‌های این دور |
+
+- **خروجی‌ها:** هر سه اجرا کامل نگه داشته شده‌اند.
+- **جدا کردن اجراها:** هر فرمان زیر ۳۰۰ ثانیه ماند. ممیزی برای همین به هر عرض جدا تقسیم شد: ۸ اجرا برای سایت و ۱۶ برای دمو (عرض در تم). `check_admin_demo.py` هم در ۶ گروه اجرا شد.
+- **سرور:** `serve.py` با `404.html`، مثل nginx.
+
+### اسکریپت به اسکریپت
+
+| اسکریپت | QA قدیم، نسخهٔ قبل | QA جدید، نسخهٔ قبل | QA جدید، نسخهٔ نهایی |
 |---|---|---|---|
-| `components/charts/geometry.ts` و `geometry.test.ts` | `src/components/charts/geometry.ts` و تستش | **کپی بدون تغییر** (+ تابع `niceTicks` که از `Overview.tsx` آمد، و `niceRange` جدید) | ریاضی مسیرها همان است؛ تست‌ها هم آمدند. |
-| `charts/HeroSparkline.tsx`، `charts/RadarRates.tsx`، `charts/MiniTrend.tsx` | `HeroSparkline.tsx`، `RadarRates.tsx`، `Small.tsx` | بازنویسی سبک | آینه‌شدن RTL، رنگ از متغیرهای CSS به‌جای `tokenColor` (تعویض تم بدون render)، کنتراست کامل متن‌ها. در رادار، برچسب محورها HTML شد (بخش ۸). |
-| `charts/AreaTrend.tsx` | `TrendPanels.tsx` | بازنویسی | دو پنل به‌جای دو محور، هندسهٔ پیکسلی با اندازه‌گیری عرض، ستون/خط/ناحیه، صفحه‌کلید و اعلان صوتی. |
-| `dashboard/overview/Overview.tsx`، `tiles.tsx`، `SidePanel.tsx` | `pages/dashboard/Overview.tsx`، `SideBlocks.tsx` | بازنویسی | همان ترکیب و اندازه‌ها، ولی همه‌چیز از پروفایل؛ count-up، skeleton و حالت‌های خالی/خطا. |
-| `dashboard/RetentionCohorts.tsx`، `ActivityHeatmap.tsx` | `pages/dashboard/Retention.tsx`، `charts/Heatmap.tsx` | بازنویسی سبک | ترتیب روزهای هفته بر اساس زبان، رنگ‌های سنجیده‌شده. |
-| `layout/AppShell`، `Sidebar`، `TopBar`، `chrome`، `CommandPalette`، `ThemeToggle`، `LanguagePill`، `nav` | `App.tsx` و `components/shell/*` | بازنویسی | انتخاب‌گر کسب‌وکار، منوی دمو، نوار پایین موبایل، میان‌برها، بدون react-router. |
-| `ui/useFocusTrap.ts`، `Modal`، `RecordDialog`، `Segmented`، `Tabs`، `Table`، `Badge`، `Button`، `Card`، `Avatar`، `Skeleton`، `EmptyState`، `ErrorState` | `components/ui/*` | بازنویسی سبک | همان قراردادهای دسترس‌پذیری؛ هدف ۴۴ پیکسلی روی موبایل. |
-| `lib/format.ts`، `lib/chartTheme.ts`، `hooks/useReducedMotion`، `useIsDark`، `useDebouncedValue` | `lib/format.ts`، `hooks/media.ts` | بازنویسی | بدون ساعت ثابت تهران (دادهٔ ساختگی روز محلی بازدیدکننده را دارد). |
-| `styles/tokens.css` (پالت Nocturne) | `scripts/palette.mjs` → `src/theme/palettes.css` | بازتولید | سطوح روشنایی Nocturne اندازه‌گیری و برای هر برند با رنگ خودش دوباره ساخته شد. |
-| `lib/api.ts`، `lib/auth.ts`، `hooks/use*` (React Query)، صفحه‌های login، setup، broadcast، texts، buttons، settings، website، system | — | **حذف** | قانون «بدون شبکه»: هیچ API، auth یا عملیات نوشتنی. تنها «نوشتن» باقی‌مانده تغییر وضعیت یک رکورد است که فقط در همان تب نگه داشته می‌شود و با بارگذاری یا Reset برمی‌گردد. |
-| `components/layout/Brand.tsx` (لوگوی GozarX) | `profiles/brands.ts` | **حذف و جایگزینی** | دمو هیچ برند واقعی‌ای ندارد؛ پنج نشانهٔ ساده و ساختگی. |
+| `npm run test:demo` | ۱۰۵ تست در ۴ فایل، همه موفق | — (تست‌های تازه به Nodemill نیاز دارند و روی کد قبلی کامپایل نمی‌شوند) | **۱۲۷ تست در ۵ فایل، همه موفق** |
+| `check_site.py` | ۰ خطا | **۶۲ خطا** (جدول پایین) | **۰ خطا** |
+| `check_single.py` | ۰ خطا | همان اسکریپت؛ در این دور تغییر نکرد | **۰ خطا**، ۰ درخواست مسدود |
+| `check_single_phone.py` | ۰ خطا | ۰ خطا | **۰ خطا** |
+| `check_admin_demo.py` | ۱۵ بررسی، همه موفق، هر کدام با `--prove` | **۸ از ۱۷ بررسی شکست** (`numbers` اجرا نشد؛ کیس‌استادی هنوز نبود) | **۱۸ از ۱۸ موفق**، هر کدام اول روی صفحهٔ خراب شکست خورد |
+| `audit.py` | ۱۹ مورد: ۱۵ نقطهٔ لوگوتایپ، B1 روی GozarX، خطای خود صفحهٔ ۴۰۴، و چند هدف ۴۴ پیکسلی ناپایدار | **سایت ۱۱ و دمو ۳۱۸ مورد یکتا (جدول پایین)** | **سایت ۰ و دمو ۰، در ۸ اجرای سایت و ۱۶ اجرای دمو** |
+| `check_demo_single.py` | — (جدید) | — | **موفق**؛ با `--prove` روی هر دو نسخهٔ خراب شکست خورد |
 
-هیچ عدد، کاربر، شناسهٔ تلگرام، IP، دامنه یا endpoint واقعی‌ای از GozarX در کد، داده، تست‌ها یا اسکرین‌شات‌ها نیست. اندازه‌های پروفایل VPN عمداً دور از ارقام واقعی انتخاب شد؛ این مقایسه بیرون از ریپو انجام شد و ارقام واقعی جایی در این شاخه نوشته نشده‌اند.
+سه نکته دربارهٔ این جدول:
+
+- **ستون «QA قدیم، نسخهٔ قبل»:** QA قدیم روی نسخهٔ قبل همه‌جا سبز بود جز ممیزی. یعنی B1 تا B11 از چشمش افتاده بودند و فقط ممیزی قدیم B1 را می‌دید.
+- **`audit.py` قدیم:** نقطهٔ لوگوتایپ را خطا می‌شمرد. ممیزی جدید آن را طبق WCAG 1.4.3 استثنا می‌کند.
+- **هدف‌های ناپایدار:** «هدف‌های ۴۴ پیکسلی ناپایدار» یک گردکردن زیرپیکسلی در ممیزی قدیم بود. ممیزی جدید عرض و ارتفاع را گرد می‌کند و این مورد دیگر پیش نمی‌آید.
+
+### هر بررسی کدام باگ را گرفت
+
+**`check_site.py` روی نسخهٔ قبل (`cbdb281`) و نهایی، بررسی به بررسی:**
+
+| بررسی | نسخهٔ قبل | نهایی | چه را می‌گیرد |
+|---|---|---|---|
+| `tokens_check` | ۱ | ۰ | B1: لینک روی پس‌زمینهٔ دوم، ۴٫۱۹:۱ |
+| `carousel_focus_check` | ۱۲ | ۰ | B2: ۳۶۰ تا ۷۲۰، با Reduce Motion و بدون آن |
+| `card_fit_check` | ۳۶ | ۰ | B13: کارت‌های GozarX، Tooti و Jozveyar روی گوشی افقی و پنجره‌های کوتاه |
+| `order_check` | ۹ | ۰ | ترتیب، شماره‌ها، نقطه‌ها و زنجیرهٔ چهار پروژه؛ پروژهٔ چهارم هنوز نبود |
+| `mobile_check` | ۴ | ۰ | صفحهٔ Spindle و «پروژهٔ بعدی» GozarX؛ هنوز نبودند |
+| `title_arrow_check` | ۰؛ ۱۷ روی `e1631dd` | ۰ | B12؛ فقط با عنوان بلند Spindle پیدا شد |
+| `title_logo_check` | ۰؛ ۳۰ روی `df8510d` | ۰ | B12′ |
+| `hero_check`، `grid_check`، `stack_check` و بررسی‌های صفحه‌ای (سرریز، h1، هدف‌ها، هدر، فونت، میزبان دیگر، خطای JS) | ۰ | ۰ | بدون تغییر |
+
+**`check_admin_demo.py` روی نسخهٔ قبل و نهایی:**
+
+| بررسی | نسخهٔ قبل | نهایی (با `--prove`) |
+|---|---|---|
+| `hosts` | موفق | موفق |
+| `render` | **شکست** (۲۰ مورد): چهار عدد به‌جای پنج، در هر کسب‌وکار و هر بازه | موفق |
+| `csv` | **شکست**: کسب‌وکار Nodemill و `[data-top-head]` نبودند | موفق |
+| `palette`، `theme_lang`، `overflow`، `motion`، `bundle`، `keyboard`، `names`، `labels` | موفق | موفق |
+| `phone_a11y` | **شکست** (۲۴ مورد): B4 («S» ۳٫۰۳:۱ تا «د» ۳٫۱۵:۱، ۳۹۰، هر دو تم) | موفق |
+| `entry` | **شکست** (۱۸ مورد): کارت دوم Tooti بود، ۳ pill روی کارت‌ها، B7 (pill روی کارت GozarX در ۱۴۴۰ و ۱۰۲۴)، بدون دکمهٔ دمو | موفق |
+| `persist` | **شکست**: `?profile=vpn` همان VPN را باز کرد | موفق |
+| `layout` | **شکست**: CLS بارگذاری فارسی ۰٫۰۰۹۰ (فروشگاه) و ۰٫۰۱۰۲ (چاپخانه) در ۳۹۰ | موفق |
+| `words` | **شکست**: ۷۳ مورد. ۱۴ در فایل‌های ساخته‌شده، ۳۵ در متن صفحه‌ها، ۱۳ در CSVها، ۷ در پنجرهٔ رکوردها و ۴ در پالت و انتخاب‌گر («VPN»، «config»، «trial»، «کانفیگ»، «آزمایشی» و…) | موفق |
+| `kpis` | **شکست** (۱۵ مورد): چهار عدد به‌جای پنج، در ۱۴۴۰، ۷۶۸ و ۳۹۰ | موفق |
+| `numbers` | — | موفق: ۱۰۴٫۱ KB، ۱۲۷ تست، ۱۸ بررسی |
+
+اجرای اول `entry` روی نسخهٔ نهایی شکست خورد: «links drawn over a card: Home, Work, About». این خطا از خود بررسی بود. نوار پایین موبایل عمداً روی کارت‌ها شناور است و بررسی آن را لینکِ روی کارت می‌شمرد. اصلاح شد (`fb2581b`): نوارهای خود سایت کنار گذاشته می‌شوند. بررسی همچنان روی نسخهٔ قبل B7 را می‌گیرد. گروه ۳ دوباره با `--prove` اجرا شد و موفق بود.
+
+اجرای اول `words` روی نسخهٔ نهایی هم شکست خورد: «"vpn" in the built file». این هم خطای خود بررسی بود. الگوی استثنای نگاشت `vpn → hosting` فقط گیومهٔ تکی و جفتی را می‌پذیرفت، ولی minifier رشته را با backtick می‌نویسد. اصلاح شد (`ada7da9`) و گروه ۶ دوباره با `--prove` اجرا شد و موفق بود. هر `vpn` دیگری همچنان شکست است.
+
+**`audit.py` روی نسخهٔ قبل و نهایی:**
+
+شمارش بر اساس «مورد یکتا» است: هر ترکیب نوع، صفحه و متن یک بار شمرده می‌شود، هرقدر هم در عرض‌ها، تم‌ها و زبان‌ها تکرار شود. هر دو طرف با همان نسخهٔ نهایی `audit.py` اجرا شدند: ۸ اجرای سایت و ۱۶ اجرای دمو (هر عرض در هر تم)، و در دمو هر پنج کسب‌وکار در هر دو زبان.
+
+| بخش | نوع | نسخهٔ قبل | نهایی | باگ |
+|---|---|---|---|---|
+| سایت | `contrast`: کنتراست متن روی پس‌زمینهٔ واقعی | ۶ | ۰ | B1 |
+| سایت | `ui-contrast`: کنتراست اجزای غیرمتنی (نقطهٔ وضعیت) | ۱ | ۰ | B3 |
+| سایت | `hit-overlap`: ناحیهٔ کلیک روی ناحیهٔ کلیک دیگر | ۱ | ۰ | B7 |
+| سایت | `http`: پاسخ غیر ۲۰۰ (صفحهٔ Spindle هنوز نبود) | ۱ | ۰ | — |
+| سایت | `focus-hidden`: فوکوس کاملاً پنهان یا بیرون صفحه | ۱ | ۰ | B2 |
+| سایت | `js-error`: خطای کنسول (همان ۴۰۴ صفحهٔ Spindle) | ۱ | ۰ | — |
+| **سایت، جمع** | | **۱۱** | **۰** | |
+| دمو | `focus-partly-hidden`: فوکوس تا حدی زیر نوار ثابت | ۲۰۸ | ۰ | B6 |
+| دمو | `clipped`: متن بریده یا ellipsis | ۱۰۰ | ۰ | B5، B8، B9، B10، B11 |
+| دمو | `contrast`: کنتراست متن روی پس‌زمینهٔ واقعی | ۱۰ | ۰ | B4 |
+| **دمو، جمع** | | **۳۱۸** | **۰** | |
+
+- **۲۰۸ مورد `focus-partly-hidden` (B6):** ردیف‌های جدول، نمودار روند و کارت‌ها در ۷۲۰، ۳۹۰ و ۳۲۰. با Tab زیر نوار پایین می‌رفتند و ۳ یا ۶ نقطه از ۹ نقطه‌شان پنهان می‌ماند.
+- **۱۰۰ مورد `clipped`:**
+  - ۶۴ مورد B9 و B8: زیرعنوان کسب‌وکار و مقدار کارت ردیف‌ها؛
+  - ۲۴ مورد B10: برچسب تب باز نوار پایین؛
+  - ۱۰ مورد B11: نام قدم‌های قیف؛
+  - ۲ مورد B5: نام برتر کارت top، در ۱۰۲۴ و ۱۴۴۰. این دو را فقط ممیزی اصلاح‌شده (`fb35476`) می‌بیند.
+- **۱۰ مورد `contrast` در دمو (B4):** یک برچسب روز در هر کسب‌وکار و هر زبان، که در همهٔ عرض‌ها و هر دو تم تکرار می‌شد.
+- **سایت:**
+  - ۶ لینک کیس‌استادی‌ها (B1)؛
+  - نقطهٔ دکمهٔ Live Demo (B3)؛
+  - pill روی کارت (B7)؛
+  - کارت Tooti بیرون صفحه با فوکوس (B2)؛
+  - و ۴۰۴ صفحهٔ Spindle که هنوز وجود نداشت.
+- **ممیزی قدیم روی همین نسخه** فقط ۱۹ مورد گزارش کرد و از این‌ها فقط B1 در آن بود.
 
 ---
 
-## ۴. اسکیمای BusinessProfile
+## ۴. پروفایل Nodemill (فروش سرور)
 
-تعریف کامل در `apps/admin-demo/src/profiles/types.ts` است. هر رشته یک جفت `{ en, fa }` است، پس ترجمهٔ جاافتاده خطای TypeScript است نه جای خالی روی صفحه.
+- **شناسه:** `hosting`.
+- **برند:** Nodemill.
+- **نوع کسب‌وکار:** «Cloud & VPS hosting» / «سرور مجازی و ابری».
+- **لوگو:** سه اسلب سرور، با چراغ و شکاف درایو بریده‌شده از آن‌ها.
+- **پیش‌فرض:** Nodemill حالا کسب‌وکار پیش‌فرض دمو است.
+- **شناسهٔ قدیمی:** `?profile=vpn` و `vpn` ذخیره‌شده در مرورگر Nodemill را باز می‌کنند. این نگاشت هم در `src/profiles/brands.ts` (`LEGACY_PROFILES`) است و هم در اسکریپت پیش از رنگ‌آمیزی `index.html`. یک تست واحد این دو را با هم برابر نگه می‌دارد.
 
-```ts
-interface BusinessProfile {
-  id: "vpn" | "saas" | "ecommerce" | "education" | "print";
-  brand: Brand;                       // نام، نوع، نشانه (SVG)، رنگ برند — همه در brands.ts
-  seed: number;                       // همهٔ عددهای این کسب‌وکار از همین seed
-  currency: string;
-  reference: string; launched: string;
-  week: WeekRhythm;                   // ۷ ضریب، یکشنبه = ۰
-  hours: number[];                    // ۲۴ وزن: چه ساعتی شلوغ است
-  series: { primary: SeriesDef; secondary: SeriesDef };   // دو سری روزانه
-  streams: Record<string, StreamDef>; // جریان‌های مشتق: درآمد، ترافیک، زمان تحویل…
-  perActive: { day: number; d7: number; d90: number };
-  copy: { chartTitle: L; chartSub: L; sparkMetric: L; health: L };
-  kpis: [KpiDef, KpiDef, KpiDef, KpiDef];   // label، format، upIsGood، value(stats)
-  radar: [RateDef, RateDef, RateDef, RateDef];
-  tops: [TopDef, TopDef, TopDef];
-  live: LiveDef;                      // آنلاین، امروز، مجموع از ابتدا
-  health: HealthDef[]; incidents: IncidentDef[];
-  growth: { cumulative; split; funnel };
-  retention: { title; sub; curve: [w0, w1, floor]; distribution };
-  behaviour: { heat; segments; list };
-  entities: [EntityDef, EntityDef];   // دو جدول: ستون‌ها (با gen)، وضعیت‌ها، فیلتر، مرتب‌سازی
-}
-```
+### KPIها
 
-پوسته، منو، پالت فرمان، نمودارها و خروجی‌های CSV فقط همین شیء را می‌خوانند. افزودن کسب‌وکار ششم یعنی یک فایل پروفایل، یک ردیف در `brands.ts` و اجرای `npm run palettes`.
+| KPI | از کجا |
+|---|---|
+| **سرورهای فعال** (قهرمان، «اکنون») | سرورهای تحویل‌شده منهای حذف‌شده‌ها از روز راه‌اندازی، تا خود واحد |
+| **سفارش‌های جدید، N روز** | جریان سفارش |
+| **MRR** | سرورهای فعال × میانگین وزنی قیمت ماهانهٔ پلن‌ها (۵٫۹ تا ۱۸۹ دلار) |
+| **میانگین ارزش سفارش** | درآمد ÷ سفارش |
+| **ریزش ماهانه** | مشتریان از دست رفته در بازه ÷ مشتریان اول بازه، به مقیاس ۳۰ روز؛ کمتر بهتر است |
 
-## ۵. پنج پروفایل
+مقدارهای سطحی (مثل «سرورهای فعال») از `WindowStats.life` می‌آیند: مجموع از روز راه‌اندازی، منهای بازه‌هایی که از آن کنده می‌شوند. پس `life(s) − life(s, 1)` دقیقاً همان مجموع بازهٔ جاری است. تست واحد این را برای هر جریان هر پنج کسب‌وکار در بازه‌های ۷، ۱۴، ۳۰ و ۹۰ روزه می‌سنجد. پهنای باند استثناست: شمارش بایت بعد از چند سال از 2^53 می‌گذرد و آنجا دقت در حد خود double است.
 
-پیش‌فرض `?profile=vpn` است. انتخاب در `sm-admin-profile` ذخیره می‌شود و نشانی صفحه همیشه `?profile=` فعلی را نشان می‌دهد، پس هر نما قابل اشتراک است. برچسب‌ها همان‌اند که رابط انگلیسی نشان می‌دهد؛ هر کدام جفت فارسی دارد.
+### بقیهٔ داشبورد
 
-| شناسه | برند و نوع | رنگ برند (روشن / تیره) | سری‌های روزانه | چهار KPI | دو جدول (ردیف) |
+- **نمودار:** سرورهای تحویل‌شده در برابر مشتریان جدید.
+- **رادار:**
+  - تحویل خودکار ~۹۸٫۶٪؛
+  - تمدید ~۸۷٪؛
+  - رعایت SLA ~۹۹٫۲٪؛
+  - تیکت زیر ۲۴ ساعت ~۹۱٪.
+
+  سقف نرخ‌ها از ۹۹ به ۹۹٫۹ رفت تا SLA بالای ۹۹ دیده شود.
+- **آمار زنده:**
+  - سرورهای آنلاین از سرورهای فعال (۹۸٫۶٪، با نوسان خیلی کم چون سرور مثل کاربر نیست)؛
+  - سفارش‌های امروز از سفارش‌های این هفته؛
+  - پهنای باند ۳۰ روز گذشته.
+- **سلامت:**
+  - در پنل کناری: Provisioning API، Billing، DNS و Monitoring؛
+  - در صفحهٔ Health، به‌اضافهٔ این دو: میزبان‌های hypervisor و صف پشتیبان‌گیری.
+- **جدول Servers:**
+  - نام سرور کد دیتاسنترش را دارد، مثل `fra-0142`؛ اول دیتاسنتر انتخاب می‌شود و بعد نام.
+  - سرور معلق موعد تمدیدش گذشته است. بقیه هر ۳۰ روز از روز ساخت تمدید می‌شوند.
+  - سرور «در حال راه‌اندازی» کمتر از دو ساعت پیش ساخته شده است.
+- **جدول Customers:**
+  - مشتری لغوشده صفر سرور و صفر هزینه دارد.
+  - «آخرین فعالیت» هیچ‌وقت قبل از «عضویت» نیست.
+
+### KPI پنجم بقیهٔ کسب‌وکارها
+
+| کسب‌وکار | KPI پنجم |
+|---|---|
+| SaaS | درآمد به ازای هر حساب، ماهانه |
+| فروشگاه | نرخ مرجوعی، N روز؛ کمتر بهتر است |
+| آکادمی | گواهی‌های صادرشده، N روز |
+| چاپخانه | درآمد، N روز |
+
+### چیدمان نوار KPI
+
+| عرض | چیدمان |
+|---|---|
+| دسکتاپ | قهرمان کنار یک دو در دو |
+| تبلت | قهرمان کنار دو کاشی و دو کاشی زیرش |
+| موبایل | یک ستون |
+
+بررسی `kpis` هر سه چیدمان را در ۱۴۴۰، ۷۶۸ و ۳۹۰ برای هر پنج کسب‌وکار اندازه می‌گیرد.
+
+### واژه‌های کسب‌وکار قبلی
+
+هیچ‌جا «VPN»، «config»، «claim»، «squad» یا «trial» نمانده است، نه به انگلیسی و نه معادل فارسی‌شان (کانفیگ، آزمایشی و مانند این‌ها). تنها استثنا نگاشت `vpn: "hosting"` است. این را دو چیز نگه می‌دارد:
+
+- **تست واحد:** هر رشتهٔ هر پروفایل و همهٔ متن‌های رابط را می‌گردد.
+- **بررسی مرورگر `words`:**
+  - فایل‌های ساخته‌شده؛
+  - متن، برچسب‌ها و عنوان‌های هر صفحهٔ هر کسب‌وکار در هر دو زبان؛
+  - پنجرهٔ رکوردها؛
+  - همهٔ CSVها؛
+  - پالت، انتخاب‌گر و منوی دمو.
+
+  این بررسی روی نسخهٔ قبل ۷۳ مورد پیدا کرد.
+
+وضعیت trial در جدول SaaS هم «Onboarding» شد.
+
+اسکرین‌شات‌ها در بخش ۸ است.
+
+---
+
+## ۵. پروژهٔ Spindle Admin Kit در سایت
+
+### فایل‌ها و مشخصات
+
+- **محتوا:** `src/content/projects/spindle.md`، با ترتیب ۲ و featured. Tooti به ترتیب ۳ و Jozveyar به ترتیب ۴ رفتند.
+- **وضعیت:** «Live demo».
+  - در `src/data/status.ts` یک نگاشت صریح دارد (`'live demo'` → `live`). قبل از regexها خوانده می‌شود.
+  - `check_site.py` همان نگاشت را تکرار می‌کند.
+- **Stack:** React، TypeScript، Vite، Tailwind CSS و «Hand-made SVG charts»، با یک آیکون نمودار تازه در `tech.mjs`.
+- **کاور:** ۱۶۰۰×۱۰۰۰ (۱۶:۱۰)، داشبورد تیرهٔ Nodemill، ۶۴ کیلوبایت WebP.
+- **لوگو:** یک دوک ریسندگی (drop spindle) روی کاشی `#EEF0FF`، با tint `#8B8DF9` و accent `#2E2A6E`.
+  - متن سفید روی accent ۱۲٫۵۶:۱ است و زیر قوی‌ترین درخشش ۷٫۴۱:۱.
+- **`demo: /lab/admin/`:** `demo` حالا می‌تواند مسیری روی همین سایت باشد. نوار پنجرهٔ کاور «sedmehdi.com/lab/admin» را نشان می‌دهد و فکت Live «‎/lab/admin‎» را.
+
+### کیس‌استادی
+
+بخش‌ها:
+
+1. مسئله؛
+2. چه ساختم: پروفایل به‌جای fork، generator قطعی که عددهایش با هم جمع می‌خورد، ⌘K، RTL با رقم فارسی، دسترس‌پذیری؛
+3. چطور تست می‌شود: هر بررسی مرورگر اول روی صفحهٔ عمداً خراب شکست می‌خورد؛
+4. عددها؛
+5. دکمهٔ «Try the Live Demo».
+
+عددهای کیس‌استادی از خود build خوانده می‌شوند و بررسی `numbers` آن‌ها را با build می‌سنجد:
+
+- ۱۰۴٫۱ کیلوبایت JS gzip در اولین بارگذاری؛
+- ۱۲۷ تست واحد؛
+- ۱۸ بررسی مرورگر.
+
+اگر یکی جابه‌جا شود، `numbers` شکست می‌خورد.
+
+### GozarX و ورودها
+
+- **کیس‌استادی GozarX:** دکمهٔ دمو حذف شد و یک خط به کیس‌استادی Spindle لینک می‌دهد.
+- **دمو:** بنر، منو و پالت دمو هم به `/projects/spindle/` می‌روند.
+- **حذف‌شده‌ها:** pill «Live Demo» کارت Work و دکمهٔ «Live Demo» موبایل.
+
+### ترتیب پروژه‌ها
+
+| کجا | حالا |
+|---|---|
+| شماره‌گذاری stack | ۰۱/۰۴ تا ۰۴/۰۴ |
+| carousel موبایل | چهار نقطه |
+| زنجیرهٔ «پروژهٔ بعدی» | GozarX → Spindle → Tooti → Jozveyar → GozarX |
+
+`check_site.py` (`order_check`) همهٔ این‌ها را در Home و Work، دسکتاپ و موبایل می‌سنجد.
+
+---
+
+## ۶. اندازهٔ باندل
+
+### روش اندازه‌گیری
+
+- **gzip:** با سطح ۹، روی خود فایل‌های `dist/lab/admin/assets`.
+- **«اولین بارگذاری»:** فایل‌هایی که `index.html` نام می‌برد: entry، modulepreloadها و stylesheet.
+- **عدد مرورگر:** بررسی `numbers` همین را از پاسخ‌های واقعی مرورگر می‌سنجد (۱۰۴٫۱).
+
+اندازه‌ها به کیلوبایت است (۱۰۲۴ بایت).
+
+| فایل | قبل، خام | قبل، gzip | بعد، خام | بعد، gzip | در اولین بارگذاری |
 |---|---|---|---|---|---|
-| `vpn` | **Passway**، سرویس VPN | `#4C5BDF` / `#7085FF` | Configs issued · New users | Total users · Active users · Configs issued · Configs per active user | Users (۲۴۰) · Servers (۳۶) |
-| `saas` | **Loopdesk**، فضای کار تیمی (SaaS) | `#007D87` / `#00A5B3` | Active users · New trials | Workspaces · Active users · Paid conversions · Churned workspaces (بالا رفتنش بد است) | Accounts (۶۰) · Invoices (۲۶۰) |
-| `ecommerce` | **Fernloft**، فروشگاه آنلاین لوازم خانه | `#00843B` / `#49A963` | Orders · New customers | Customers · Orders · Revenue · Average order value | Orders (۲۶۰) · Customers (۲۴۰) |
-| `education` | **Quillstone**، آکادمی آنلاین | `#814AC9` / `#A474EC` | Lessons completed · New enrolments | Students · Active learners · Lessons completed · Lessons per learner | Students (۲۴۰) · Courses (۲۸) |
-| `print` | **Proofpost**، چاپ و ارسال پستی | `#B24800` / `#DE6E35` | Jobs · New customers | Customers · Jobs · Items printed · Average turnaround (بالا رفتنش بد است) | Jobs (۲۴۰) · Customers (۲۰۰) |
+| `react.js` | ۱۳۶٫۶ | ۴۳٫۷ | ۱۳۶٫۶ | ۴۳٫۷ | بله |
+| `data.js` | ۹۱٫۳ | ۲۸٫۸ | ۹۵٫۳ | ۳۰٫۱ | بله |
+| `index.js` | ۷۳٫۲ | ۲۲٫۵ | ۷۳٫۵ | ۲۲٫۷ | بله |
+| `index.css` | ۵۴٫۶ | ۱۰٫۶ | ۵۵٫۱ | ۱۰٫۷ | بله |
+| `Records.js` | ۱۴٫۷ | ۵٫۱ | ۱۴٫۸ | ۵٫۱ |  |
+| `vendor.js` | ۱۱٫۷ | ۴٫۳ | ۱۱٫۷ | ۴٫۳ | بله |
+| `geometry.js` | ۹٫۰ | ۳٫۴ | ۸٫۹ | ۳٫۴ | بله |
+| `Health.js` | ۵٫۹ | ۲٫۱ | ۵٫۹ | ۲٫۱ |  |
+| `Behaviour.js` | ۳٫۶ | ۱٫۴ | ۳٫۶ | ۱٫۴ |  |
+| `Retention.js` | ۳٫۲ | ۱٫۳ | ۳٫۲ | ۱٫۳ |  |
+| `Small.js` | ۲٫۲ | ۱٫۱ | ۲٫۲ | ۱٫۱ |  |
+| `Growth.js` | ۲٫۶ | ۱٫۱ | ۲٫۶ | ۱٫۱ |  |
+| `Badge.js` | ۰٫۸ | ۰٫۴ | ۰٫۸ | ۰٫۴ |  |
+| **JS اولین بارگذاری** | | **۱۰۲٫۶** | | **۱۰۴٫۱** | |
+| **CSS اولین بارگذاری** | | **۱۰٫۶** | | **۱۰٫۷** | |
+| **همهٔ JS** | **۳۵۴٫۶** | **۱۱۵٫۰** | **۳۵۹٫۱** | **۱۱۶٫۶** | |
 
-| شناسه | رادار (چهار نرخ) | سه کارت «برتر» | آمار زنده | بررسی‌های سلامت |
-|---|---|---|---|---|
-| `vpn` | Conversion · Activation · Week-2 return · Repeat | location · platform · inviter | Online now · New users today · Traffic carried | ۶: Control plane API، Edge gateways، Auth service، Subscription links، Signup webhook، DNS resolvers |
-| `saas` | Trial to paid · Activation · Net retention · Adoption | plan · region · integration | Online now · Trials today · Monthly recurring revenue | ۶: Public API، Database، Job queue، Email delivery، Search index، File storage |
-| `ecommerce` | Checkout · Repeat purchase · On-time delivery · Positive reviews | product · category · city | Shoppers online · New customers today · Gross sales | ۵: Storefront، Checkout، Payment gateway، Inventory sync، Image CDN |
-| `education` | Completion · Quiz pass rate · Week-2 return · Attendance | course · teacher · device | Learners online · Enrolments today · Video hours watched | ۵: Video streaming، Course API، Quiz engine، Email delivery، Live classrooms |
-| `print` | On-time dispatch · Reorders · First-pass quality · Proofs within 24h | product · paper stock · destination | Customers online · New customers today · Parcels posted | ۵: Order intake، Print queue، Shipping label API، Presses online، Payments |
-
-هر پروفایل ریتم هفتگی و منحنی ساعتی خودش را دارد: SaaS و چاپخانه در روزهای کاری و ساعت اداری کار می‌کنند و آخر هفته‌شان به حدود یک‌سوم می‌رسد؛ آکادمی، فروشگاه و VPN سر شب به اوج می‌رسند و فروشگاه و VPN آخر هفته شلوغ‌ترند. نرخ رشد سالانهٔ سری اصلی هم برای هر کدام فرق دارد (۳۶٪ تا ۵۵٪). ستون‌ها، وضعیت‌ها و فیلتر هر جدول هم از پروفایل می‌آید؛ مثلاً Orders فروشگاه وضعیت‌های Paid / Packed / Shipped / Delivered / Refunded و فیلتر Category دارد، و Jobs چاپخانه مرحله‌های Proof / Printing / Finishing / Posted و فیلتر Product.
-
----
-
-## ۶. سازوکار generator
-
-- **قطعی:** همهٔ اعداد از mulberry32 با seed هر کسب‌وکار و هش FNV-1a نام‌ها می‌آیند (`src/data/prng.ts`). تستی هست که اگر جایی `Math.random` صدا زده شود شکست می‌خورد، و تستی که دو نسخهٔ تازهٔ ماژول را مقایسه می‌کند.
-- **مقدار یک روز تابع خالص (کسب‌وکار، جریان، تاریخ) است:**
-  `پایه × رشد سالانه از تاریخ مرجع × شیب راه‌اندازی × ضریب روز هفته × نوسان نرم × روزهای کمپین`.
-  نوسان نرم value noise کلیددار روی شمارهٔ روز است، پس یک تاریخ همیشه همان عدد را دارد، در هر بازه‌ای که دیده شود؛ بازهٔ ۷ روزه دقیقاً دم بازهٔ ۱۴ روزه است (تست دارد).
-- **امروز** = مقدار کامل روز × سهم گذشتهٔ روزِ همان کسب‌وکار (منحنی ساعتی‌اش انتگرال گرفته می‌شود). روی نمودار خط‌چین است و در tooltip و جدول «امروز، هنوز در جریان» نوشته می‌شود.
-- **بازهٔ قبلی** همان بازهٔ فعلی است که به عقب منتقل شده، پس روز آخرش هم در همان ساعت بریده می‌شود و هر دو هم‌طول‌اند.
-- **اتحاد جمع:** هر KPI پنجره‌ای جمع دقیق همان روزهایی است که نمودار می‌کشد (تست دارد)، و مجموع تجمعی تب رشد دقیقاً روی عدد کاشی قهرمان تمام می‌شود.
-- **«کاربران فعال»** از حجم سری اصلی و میانگین فعالیت هر نفر تخمین زده می‌شود، با یک drift قطعی تا شاخص «به ازای هر نفر» بین دو بازه حرکت کند.
-- **آمار زنده** (`src/state/Live.tsx`) هر ۳ تا ۵ ثانیه یک گام برمی‌دارد که به مقدار همین ساعتِ generator برمی‌گردد (mean-reverting). وقتی تب پنهان است متوقف می‌شود و با Reduce Motion اصلاً شروع نمی‌شود و پنل همین را می‌نویسد.
-- **ردیف‌های جدول** با seed (کسب‌وکار، جدول، شمارهٔ ردیف) ساخته می‌شوند؛ فردا همان آدم‌ها و همان مقدارها هستند و فقط زمان‌های نسبی جابه‌جا می‌شوند (تست دارد).
-- **هر ردیف با خودش سازگار است:** وضعیت با بقیهٔ ستون‌های همان ردیف جور است (`statusAmong` و `agoBetween` در `src/data/gen.ts`؛ فهرست کامل قاعده‌ها در بخش ۸):
-  - **کاربر و حساب:** کاربر «بی‌فعالیت» بیش از یک هفته دیده نشده است. حساب آزمایشی حداکثر دو هفته عمر دارد و درآمدی ندارد.
-  - **سفارش:** با بالا رفتن سنش به‌ترتیب پرداخت، بسته‌بندی، ارسال و تحویل می‌شود.
-  - **دوره:** دورهٔ پیش‌نویس دانشجو ندارد.
-  - **نام‌ها:** هیچ جدولی یک نام را تکرار نمی‌کند، چه حساب و چه دوره و چه handle افراد.
-- **پنجرهٔ رکورد:**
-  - **رکوردهای ماندگار:** روند ۳۰ روزه داخل بازهٔ عمر رکورد می‌ماند و از رقم خود رکورد بیشتر نمی‌شود؛ مثلاً کاربری با ۷ کانفیگ در ۳۰ روز بیش از ۷ کانفیگ نمی‌گیرد. وضعیت‌های «ساکت» (مسدود، لغوشده، پیش‌نویس) نه روند دارند نه فعالیت.
-  - **رکوردهای یک‌باره** (سفارش، صورت‌حساب، سفارش چاپ): روند ندارند و به‌جایش «سابقه» دارند؛ یعنی رویدادها تا وضعیت فعلی، به ترتیب، از لحظهٔ شروع.
-- **CSV** از همان اشیائی ساخته می‌شود که صفحه رندر می‌کند: UTF-8 با BOM، تاریخ ISO، عدد خام بدون واحد. خروجی داشبورد یک جدول «tidy» است (بخش، شاخص، مورد، تاریخ، مقدار، دورهٔ قبل، تغییر٪، یادداشت) که کاشی‌ها، همهٔ روزهای نمودار، کارت‌های برتر و نرخ‌ها را دارد. خروجی جدول همهٔ ردیف‌های فیلترشده و مرتب‌شده را با همهٔ ستون‌ها دارد، حتی ستون‌هایی که موبایل پنهان می‌کند.
-- **حالت‌های دمو:** تعویض کسب‌وکار یا بازه ۳۸۰ میلی‌ثانیه skeleton نشان می‌دهد؛ «شبکهٔ کند» ۱٫۶ ثانیه؛ «پاسخ‌های خطا» هر درخواست را به حالت خطا می‌برد و Retry واقعاً دوباره می‌پرسد (skeleton و بعد همان خطا، تا حالت داده از منوی دمو به «زنده» برگردد)؛ «فضای کاری خالی» همان صفحه‌ها را بی‌داده می‌سازد. اولین بارگذاری منتظر نمی‌ماند.
+- **KPI پنجم و پروفایل سرور:** chunk `data` (generator و پنج پروفایل) را ۱٫۳ کیلوبایت gzip بزرگ‌تر کرد.
+- **اصلاح‌های نمایشی:** چند صد بایت اضافه کردند.
+- **سقف `bundle`:** ۲۵۰ کیلوبایت است و اولین بارگذاری ۱۰۴٫۱ کیلوبایت.
 
 ---
 
-## ۷. اندازهٔ bundle
+## ۷. نسخهٔ تک‌فایلی دمو (`npm run demo:single`)
 
-اندازه‌ها از فایل‌های واقعی `dist/lab/admin/` با gzip سطح ۹ گرفته شده‌اند، همان روشی که بررسی `bundle` به کار می‌برد. فهرست «اولین رندر» حدس نیست: بررسی `bundle` پاسخ‌های واقعی مرورگر را هنگام باز کردن `/lab/admin/?profile=vpn` جمع می‌کند.
+فقط برای پیش‌نمایش آفلاین ساخته می‌شود و کامیت نمی‌شود. خروجی `preview/spindle-admin-demo.html` است و `preview/` در `.gitignore` است.
 
-### chunkهایی که در اولین رندر داشبورد بار می‌شوند
+### ساخت
 
-| فایل | چه چیزی | خام | gzip |
-|---|---|---|---|
-| `react-C5pd41F9.js` | React و ReactDOM | ۱۳۶٫۶ KB | **۴۳٫۷ KB** |
-| `data-B9cgmAKg.js` | generator و پنج پروفایل | ۹۱٫۳ KB | **۲۸٫۸ KB** |
-| `index-B8krzujR.js` | پوسته، کیت UI، نمای کلی داشبورد، نمودارها | ۷۳٫۲ KB | **۲۲٫۵ KB** |
-| `vendor-B7felsfy.js` | آیکون‌های lucide (فقط آن‌هایی که استفاده می‌شوند) و clsx | ۱۱٫۷ KB | **۴٫۳ KB** |
-| `geometry-DrNzdAVU.js` | هندسهٔ نمودارها (مشترک بین داشبورد و تب‌های lazy) | ۹٫۰ KB | **۳٫۴ KB** |
-| **جمع JS اولین رندر** | | ۳۲۱٫۷ KB | **۱۰۲٫۶ KB** (سقف ۲۵۰) |
-| `index-6t0sU-Zv.css` | همهٔ CSS، با پالت هر پنج برند | ۵۴٫۶ KB | ۱۰٫۶ KB |
-| `index.html` | با اسکریپت پیش از رنگ‌آمیزی (تم، زبان، جهت) | ۵٫۸ KB | ۲٫۴ KB |
-| `dm-sans-latin.woff2` و `Vazirmatn-Medium.woff2` | فونت‌ها (woff2 خودش فشرده است) | ۶۱٫۳ و ۴۹٫۹ KB | — |
+`npm run demo:single` اول دمو را می‌سازد، بعد `scripts/demo-single.mjs` را اجرا می‌کند:
 
-### chunkهای lazy (فقط وقتی آن صفحه یا تب باز شود)
+1. **JS:** esbuild (`0.28.2`، که حالا devDependency ریشه است) همهٔ chunkها را، صفحه‌های lazy هم، در یک ES module می‌گذارد. اگر یک `import()` بیرون باندل بماند، ساخت متوقف می‌شود.
+2. **CSS:** stylesheet و قاعده‌های `@font-face` با همهٔ فونت‌ها data URI می‌شوند. favicon هم همین‌طور.
+3. **guard:** اولین چیز در `<head>` است، قبل از اسکریپت پیش از رنگ‌آمیزی:
+   - رویداد `vite:preloadError` را `preventDefault` می‌کند.
+   - نمی‌گذارد لینک‌های `modulepreload`، `preload` و `stylesheet` برای فایل‌های `.js`، `.css` و `.woff2` وارد صفحه شوند. این لینک‌ها را helper پیش‌بارگذاری Vite برای صفحه‌های lazy و اسکریپت پیش از رنگ‌آمیزی برای فونت فارسی می‌سازند.
+   - به‌جای آن لینک‌ها خودش `load` را dispatch می‌کند، همان چیزی که helper برای stylesheet منتظرش است.
+   - الگوی regex آن با `String.raw` نوشته شده تا backslashها همان‌طور به صفحه برسند: `/\.(?:js|css|woff2)(?:[?#]|$)/i`.
+4. **پیوندها:** پیوندهای مسیرمحور دمو (بنر، منو و فرمان پالت) آفلاین به سایت منتشرشده می‌روند. فایل `scripts/single-file.mjs` سایت هم همین کار را می‌کند.
 
-| فایل | صفحه | خام | gzip |
-|---|---|---|---|
-| `Records-CSNrrcwH.js` | دو جدول هر کسب‌وکار و پنجرهٔ رکورد | ۱۴٫۷ KB | ۵٫۱ KB |
-| `Health-BIUwWqu5.js` | صفحهٔ سلامت | ۵٫۹ KB | ۲٫۱ KB |
-| `Behaviour-BGOuVn6E.js` | تب رفتار | ۳٫۶ KB | ۱٫۴ KB |
-| `Retention-BdTAsNgG.js` | تب نگهداشت | ۳٫۲ KB | ۱٫۳ KB |
-| `Growth-BR2qdnPY.js` | تب رشد | ۲٫۶ KB | ۱٫۱ KB |
-| `Small-MX2InqyV.js` | نمودارهای کوچک، مشترک سه تب، پنجرهٔ رکورد و صفحهٔ سلامت | ۲٫۲ KB | ۱٫۱ KB |
-| `Badge-sPUD44Ju.js` | نشان وضعیت، مشترک جدول‌ها، تب نگهداشت و صفحهٔ سلامت | ۰٫۸ KB | ۰٫۴ KB |
+### نتیجه
 
-همهٔ JS دمو، همهٔ صفحه‌ها با هم: **۱۱۵٫۰ KB** gzip. برای مقایسه، طبق CLAUDE.md خود GozarX، chunk نمودار پنل اصلی (recharts) به‌تنهایی ۴۳۴ کیلوبایت خام بود. کل پوشهٔ `dist/lab/admin/` با فونت‌ها و مجوزهایشان ۶۳۴ کیلوبایت است.
+- **اندازه:** ۷۵۵ کیلوبایت (۳۴۶ کیلوبایت gzip). از این مقدار ۴۰۲ کیلوبایت ماژول JS است (۱۱۵ gzip) و ۳۳۷ کیلوبایت استایل؛ ۲۸۱ کیلوبایتِ همین استایل چهار فونت woff2 به‌صورت base64 است.
+- **تست:** `scripts/qa/check_demo_single.py` فایل را از `file://` باز می‌کند و این‌ها را می‌گردد:
+  - هر پنج کسب‌وکار، در هر دو زبان و هر دو تم؛
+  - همهٔ صفحه‌ها؛
+  - پنجرهٔ یک رکورد؛
+  - پالت، انتخاب‌گر و منوی دمو؛
+  - عوض‌کردن تم و دانلود CSV.
 
----
-
-## ۸. تست‌ها
-
-### تست‌های واحد (`npm run test:demo`)
-
-نتیجه: **۴ فایل، ۱۰۵ تست، همه موفق** (همراه با `tsc --noEmit` روی کد تست).
-
-| فایل | تست | چه چیزی را نگه می‌دارد |
-|---|---|---|
-| `src/data/generator.test.ts` | ۷۱ (۱۴ برای هر پروفایل + ۱ برای CSV) | `Math.random` هرگز صدا زده نمی‌شود؛ دو نسخهٔ تازهٔ ماژول یک عدد می‌دهند؛ هر بازه برشی از بازهٔ بلندتر است؛ هر عدد پنجره‌ای جمع روزهایی است که نمودار می‌کشد؛ بازهٔ قبلی همان بازه است که به عقب رفته و در همان ساعت بریده شده؛ امروز روزی ناقص است که با ساعت پر می‌شود؛ یک تاریخ از هر روزی که دیده شود همان عدد را دارد؛ ریتم هفتگی و رشد؛ همهٔ عددها متناهی و معقول‌اند؛ sparkline روی هفت روز کامل آخر است؛ حالت خالی همه‌چیز را صفر می‌کند؛ ردیف‌های جدول در هر بازدید و هر روز همان‌اند؛ هیچ جدولی نام یک رکورد را تکرار نمی‌کند (handle افراد هم یکتاست)؛ روند، فعالیت و سابقهٔ پنجرهٔ هر رکورد با خود رکورد جور است (جمع زیر رقم عمر، صفر بیرون از بازه و برای وضعیت ساکت، رویدادها به ترتیب و داخل بازه، سابقه دقیقاً تا وضعیت فعلی)؛ CSV با ویرگول، نقل‌قول، شکست خط، فارسی و فاصلهٔ لبه رفت‌وبرگشت می‌شود. |
-| `src/theme/palette.test.ts` | ۱۲ | هر زوج رنگی که کامپوننتی واقعاً می‌کشد (متن روی سطح، نشان‌ها، آواتارها، خانه‌های پررنگ برند، دکمهٔ اصلی و…) در هر پنج برند و هر دو تم دست‌کم ۴٫۵:۱ (متن) یا ۳:۱ (اجزای رابط) است؛ `palettes.css` کامیت‌شده همان چیزی است که generator می‌نویسد؛ پنج برند پنج رنگ متفاوت دارند. |
-| `src/lib/format.test.ts` | ۵ | رقم لاتین در انگلیسی و رقم و جداکنندهٔ فارسی در فارسی؛ عدد با واحد لاتین داخل جملهٔ فارسی جابه‌جا نمی‌شود (FSI…PDI)؛ تقویم شمسی در فارسی؛ پول با واحد کسب‌وکار؛ فقط توکن‌هایی که داده شده پر می‌شوند. |
-| `src/components/charts/geometry.test.ts` | ۱۷ | تست‌های خود GozarX برای مسیرهای نرم، ناحیه زیر منحنی، رادار و برچسب‌ها، به‌اضافهٔ `niceTicks` و `niceRange`. |
-
-### بررسی‌های مرورگر (`scripts/qa/check_admin_demo.py --prove`)
-
-هر بررسی دو بار اجرا شد: اول روی صفحه‌ای که عمداً خراب شده (خرابی از بیرون تزریق می‌شود: init script، CSS یا بازنویسی پاسخ؛ کد منتشرشده هیچ کلیدی برای آن ندارد) و باید **شکست** بخورد؛ بعد روی صفحهٔ واقعی و باید **موفق** شود.
-
-اجرای نهایی: `python3 scripts/qa/check_admin_demo.py http://localhost:4321 --prove`، روی همین build. نتیجه: **۱۵ بررسی، هر ۱۵ روی صفحهٔ خراب شکست خوردند و روی صفحهٔ واقعی موفق شدند؛ ۰ خطا، کد خروج ۰.** ستون «روی صفحهٔ خراب» خروجی خود اسکریپت است؛ فقط جاهایی که با «…» یا «(و …)» آمده کوتاه شده‌اند.
-
-| بررسی | چه چیزی را می‌سنجد | خرابی تزریق‌شده | روی صفحهٔ خراب: **FAIL** | روی صفحهٔ واقعی |
-|---|---|---|---|---|
-| `hosts` | هیچ درخواستی به میزبان دیگر و هیچ خطای کنسول، در همهٔ صفحه‌های هر پنج کسب‌وکار (اولی در هر دو زبان) | init script: یک beacon به `example.com` و یک `console.error` | `requests to other hosts: ['example.com']`<br>`console errors: ['injected error', …]` | **PASS** |
-| `render` | هر کسب‌وکار در هر چهار بازه: چهار عدد متناهی، نمودار روند و جدول جایگزینش با دقیقاً `range` ردیف؛ و هر صفحه (سه تب دیگر، دو جدول، سلامت) | `Date.prototype.getHours` همیشه `NaN` برمی‌گرداند | `vpn 7d: figures [nan, nan, nan, nan]` (و ۱۴، ۳۰، ۹۰) | **PASS** |
-| `csv` | CSV داشبورد دقیقاً عددهای روی صفحه را دارد (کاشی‌ها، همهٔ روزهای نمودار، کارت‌های برتر، نرخ‌ها)؛ CSV جدول همهٔ ردیف‌های فیلترشده و مرتب‌شده را به ترتیب صفحه دارد | `Blob` آخرین ردیف هر CSV را می‌اندازد | `vpn overview: CSV rates ['74.4', '68', '55.5'] vs screen [74.4, 68, 55.5, 60.2]`<br>`records: CSV has 134 rows, the filter shows 135` | **PASS** |
-| `palette` | Ctrl+K و Cmd+K پالت را باز می‌کنند؛ پالت به تب می‌رود و کسب‌وکار، تم و بازه را عوض می‌کند | یک listener در فاز capture کلید Ctrl/Cmd+K را می‌بلعد | `Control+k did not open the palette`<br>`Meta+k did not open the palette` | **PASS** |
-| `theme_lang` | تم از تم ذخیره‌شدهٔ پورتفولیو (`sm-theme`) پیروی می‌کند، عوض و ذخیره می‌شود؛ با تغییر زبان چیدمان، محور زمان نمودار و رقم‌ها آینه/فارسی می‌شوند | CSS: `html[dir="rtl"] body { direction: ltr }` | `Persian: the rail is not on the right (layout not mirrored)` | **PASS** |
-| `overflow` | بدون سرریز افقی در ۱۴۴۰، ۱۰۲۴، ۷۶۸، ۳۹۰ و ۳۲۰، در همهٔ صفحه‌ها و هر دو زبان | CSS: یک `::after` به پهنای `130vw` زیر عنوان صفحه | `1440px en #/: [['main', 1892, 1017]]` (و همهٔ صفحه‌ها) | **PASS** |
-| `phone_a11y` | روی ۳۹۰ و ۳۲۰: کنتراست هر متن روی پس‌زمینهٔ واقعی‌اش (۴٫۵:۱، متن بزرگ ۳:۱) و هدف لمسی ۴۴ پیکسلی، برای هر پنج کسب‌وکار در هر دو تم | CSS روی موبایل: متن ثانویه کم‌رنگ و دکمهٔ تم ۳۲ پیکسلی | `"Business · VPN service" 2.79:1 (needs 4.5)`<br>`target "Switch to the dark theme" 32x32` | **PASS** |
-| `motion` | آمار زنده تیک می‌خورد، با پنهان شدن تب می‌ایستد و برمی‌گردد، و با Reduce Motion ساکن می‌ماند | `matchMedia` درخواست reduced motion را نادیده می‌گیرد | `Reduce Motion: ['527', 'running'] -> ['526', 'running'], expected still`<br>`Reduce Motion: the live dot still pings` | **PASS** |
-| `entry` | دکمهٔ کیس‌استادی و دکمهٔ کارت Work: در پنج عرض و دو تم روی هیچ متن، کاشی لوگو یا قاب کارت نمی‌افتد، ۴۴ پیکسل است، ۴٫۵:۱ دارد؛ دکمهٔ موبایل هم؛ همه به دمو می‌روند | CSS: دکمه روی عنوان کارت جابه‌جا می‌شود | `Work 1024px light: the pill falls on the text st-sum` (و ۱۲۸۰، ۱۴۴۰، ۱۹۲۰) | **PASS** |
-| `persist` | `?profile=` و `?lang=` اعمال و به خاطر سپرده می‌شوند، نشانی همراه تعویض به‌روز می‌شود، `?theme=` بدون ذخیره اعمال می‌شود | `Storage.prototype.setItem` هیچ چیز نمی‌نویسد | `the business is not remembered across visits`<br>`the range is not remembered (14)` | **PASS** |
-| `layout` | layout shift حداکثر ۰٫۰۱ در بارگذاری، تعویض بازه، تعویض کسب‌وکار و تعویض تب، در ۱۴۴۰ و ۳۹۰ | init script: یک بلوک ۶۴ پیکسلی ۱٫۲ ثانیه بعد از بارگذاری بالای صفحه | `1440px load: layout shift 0.026`<br>`390px load: layout shift 0.062` | **PASS** (بیشینه ۰٫۰۰۰۶) |
-| `bundle` | JS اولین بارگذاری حداکثر ۲۵۰ کیلوبایت gzip، و هیچ chunk صفحه‌های دیگر در آن | بازنویسی پاسخ HTML: یک اسکریپت ۳۰۰ کیلوبایتی نویز | `first-load JS is 405.7 KB gzipped (budget 250)` | **PASS** (۱۰۲٫۶ KB) |
-| `keyboard` | هر کنترل با Tab در دسترس است و حلقهٔ فوکوس دیده می‌شود؛ انتخاب‌گر کسب‌وکار، بازه و نمودار به کلیدها جواب می‌دهند | CSS: حلقهٔ فوکوس حذف می‌شود | `no visible focus ring on ['sed.mehdi , home…', 'Demo…', 'GozarX case study…', 'Dashboard']` | **PASS** |
-| `names` | هر کنترل، پنجره، تصویر، tab panel و جدول نمایان یک نام دسترس‌پذیر دارد، به‌خصوص دکمه‌های فقط‌آیکن. در ۱۴۴۰ و ۳۹۰، هر دو زبان، هر پنج کسب‌وکار، هفت صفحه و چهار لایهٔ باز (پنجرهٔ رکورد، پالت، انتخاب‌گر، منوی دمو)؛ ۹٬۷۹۶ عنصر | init script: `aria-label`، `title` و متن دکمهٔ تم و دکمهٔ CSV برداشته می‌شود | `1440px vpn en #/: no name on <button … h-11 w-11 …>` (دکمهٔ تم)<br>`… no name on <button … inline-flex …>` (دکمهٔ CSV) | **PASS** |
-| `labels` | متنی که جهت خواندن یا کمبود جا می‌تواند بی‌صدا خرابش کند، اندازه‌گیری‌شده: عدد هر فهرست و سهم یا یادداشتش جدا و به ترتیب خواندن (دست‌کم ۳ پیکسل فاصله)، برچسب‌های رادار داخل قاب و بیرون از دایرهٔ نمودار و جدا از هم، و جفت «x / y» چپ‌به‌راست؛ هر پنج کسب‌وکار، دو زبان، ۱۴۴۰ و ۳۹۰ | CSS: مقدار فهرست دوباره یک run درون‌خطی، برچسب رادار بدون شکست، جفت راست‌به‌چپ | `pair "12 / 12" reads right to left`<br>`list value "89971.3% of the step before": its parts are 0.0px apart in reading order (needs 3)`<br>`list value "14,36650.3%": its parts are 0.0px apart in reading order (needs 3)`<br>و جداگانه: `radar label "Proofs within 24h67.9%" leaves the figure (-26..64 of 280px)` | **PASS** |
-
-یک نکته دربارهٔ خود اسکریپت: در اجرای اول، بررسی `bundle` روی صفحهٔ خراب شکست خورد ولی به دلیل غلط (یک handler مسیر که Playwright آرگومان دومش را با `Request` پر می‌کرد، صفحه را تا timeout نگه داشت) و همین خطا اجرای واقعی را هم crash کرد. handler به یک factory تبدیل شد و حالا شکست روی صفحهٔ خراب دلیل درستش را می‌گوید (۴۰۵٫۷ کیلوبایت در برابر سقف ۲۵۰).
-
-**جایگزین متنی هر نمودار:**
-
-- هر هشت کارت نمودار یک دکمهٔ «Table» با `aria-pressed` دارند که همان داده را به‌شکل جدول نشان می‌دهد: روند نمای کلی، سه کارت رشد، کوهورت‌های نگهداشت و سه کارت رفتار، از جمله heatmap. بررسی `render` جدول روند را در هر بازه می‌شمارد.
-- sparkline کاشی اصلی و نوارهای uptime سلامت `role="img"` با یک `aria-label` خلاصه دارند.
-- رادار نرخ‌ها یک فهرست `sr-only` با هر چهار مقدار دارد.
-
-اندازه‌گیری‌های جانبی همین اجرا: layout shift روی صفحهٔ واقعی ۰٫۰۰۰۱ در بارگذاری ۱۴۴۰، ۰٫۰۰۰۶ در تعویض کسب‌وکار ۱۴۴۰ و صفر در بقیه.
-
-### خطاهایی که بازبینی اسکرین‌شات‌ها پیدا کرد
-
-بعد از اولین دور کامل QA که سبز بود، همهٔ اسکرین‌شات‌ها یکی‌یکی دیده شدند و بعد ردیف‌های اول هر ده جدول هم خوانده شد. چهار دسته خطای واقعی پیدا شد که هیچ بررسی‌ای نمی‌دید. همه درست شدند، و دو بررسی مرورگر و دو تست واحد جدید اضافه شد تا برنگردند:
-
-1. **برچسب‌های بلند رادار بریده می‌شدند.**
-   - **کجا:** «Proofs within 24h» (Proofpost)، «Positive reviews» و «Repeat purchase» (Fernloft)، «Quiz pass rate» (Quillstone)، و در فارسی «حضور در کلاس زنده» و «نظرهای مثبت».
-   - **چرا:** متن SVG نمی‌شکند و فقط ۵۴ واحد جا کنار هر پره داشت.
-   - **رفع:** برچسب‌ها حالا HTML روی نقشه‌اند. در فاصلهٔ پره تا لبهٔ قاب می‌شکنند و در هر عرضی ۱۱ پیکسل می‌مانند؛ قبلاً با مقیاس SVG در پنل کناری ۸٫۶ پیکسل بودند.
-2. **دو عدد کنار هم در فارسی یکی می‌شدند.**
-   - **کجا:** در قیف تب رشد، «۹۸۱» و «۸۷٫۳٪ از مرحلهٔ قبل» به‌شکل «۹۸۱۸۷٫۳٪» خوانده می‌شد. در فهرست‌های تب رفتار هم عدد و سهمش همین‌طور.
-   - **چرا:** دو عدد پشت سر هم برای الگوریتم bidi یک run هستند، پس جابه‌جا می‌شوند و فاصلهٔ بینشان بیرون می‌افتد.
-   - **رفع:** هر کدام یک flex item جداست. `<bdi>` کافی نبود: عنصری که فقط رقم دارد LTR حل می‌شود و حاشیه‌اش طرف اشتباه می‌افتاد.
-   - **همراهش:** کارت «x / y» صفحهٔ سلامت `dir="ltr"` را روی کل بلوک داشت و در فارسی عدد را به لبهٔ چپ کارت می‌برد؛ حالا فقط روی خود عدد است.
-3. **ستون پول در جدول دو قالب داشت:** «$1,800» کنار «$840.00»، چون قاعدهٔ کاشی‌ها (بالای ۱٬۰۰۰ بدون سنت) برای سلول‌ها هم اجرا می‌شد. حالا هر ستون پول در همهٔ ردیف‌ها تعداد اعشار یکسانی دارد: MRR بدون سنت و بقیه با سنت (`digits` در تعریف ستون).
-
-4. **داده‌ها با خودشان تناقض داشتند.** فهرست ردیف‌های اول هر ده جدول بیرون کشیده و خوانده شد؛ هر وضعیت مستقل از بقیهٔ ردیف قرعه کشیده می‌شد. ناسازگاری‌های این فهرست، که حالا هیچ‌کدام نیست:
-
-   | جدول | مشکل | حالا |
-   |---|---|---|
-   | Accounts در SaaS | ۲۲۰ ردیف از ۳۰ نام شرکت ساخته می‌شد، پس هر نام حدود هفت بار تکرار می‌شد. | هر شرکت یک بار؛ نام‌ها از ۳۰ به ۶۰ رسید و جدول ۶۰ ردیف دارد. «Bluefin Labs» نام یک شرکت واقعی بود و حذف شد. |
-   | Courses | ۷ عنوان، هر کدام چهار بار. | کاتالوگ ۲۸ دوره‌ای دوزبانه، هر دوره یک بار. |
-   | Users، Students و Customers | handle چند نفر یکی بود. | handle از روی شمارهٔ ردیف ساخته می‌شود. |
-   | Users در VPN | کاربر «بی‌فعالیت» یک ساعت پیش دیده شده بود. | — |
-   | Servers | سرور «در حال تعمیر» با ۸۳٪ بار و ۱۳۸ کاربر آنلاین. | — |
-   | Orders | سفارش «تحویل‌شده» در همان ساعت ثبت. | — |
-   | Customers در فروشگاه | مشتری «جدید» با ۱۳ سفارش. | — |
-   | Students | دانشجوی «به پایان رسانده» با پیشرفت ۷۱٪. | — |
-   | Courses | دورهٔ «پیش‌نویس» با بیش از هزار دانشجو. | — |
-   | Accounts در SaaS | حساب «آزمایشی» با درآمد ماهانه. | — |
-   | Invoices | صورت‌حساب «سررسید گذشته» پیش از موعدش. | — |
-
-   **پنجرهٔ رکورد:** مجموع ۳۰ روزه را کنار ستون‌های خود رکورد چاپ می‌کرد؛ مثلاً ۳۶ کانفیگ در یک ماه برای کاربری با ۷ کانفیگ، یا فعالیت «۲ ساعت پیش» برای کاربری که ۵ هفته پیش دیده شده بود.
-
-   هر قاعده یک تست واحد دارد (بخش ۶ و جدول تست‌های واحد بالا).
-
-**بررسی‌های جدید:**
-
-- **`names`:** نام دسترس‌پذیر هر کنترل. این مورد بخشی از خواستهٔ فاز ۱ بود که بررسی خودکار نداشت.
-- **`labels`:** چیدمان این سه نوع متن را اندازه می‌گیرد.
-
-هر دو مثل بقیه روی خرابی عمدی FAIL و روی صفحهٔ واقعی PASS شدند. بعد از رفع‌ها، تست‌های واحد، همهٔ بررسی‌های مرورگر، اسکرین‌شات‌ها و QA پورتفولیو از اول روی build نهایی اجرا شدند. همهٔ عددهای این گزارش از همان اجرای آخرند.
+  نتیجه: صفر خطای کنسول، صفر خطای صفحه، صفر درخواست ناموفق، و هیچ درخواستی جز خود فایل و نشانی‌های `data:` و `blob:` نبود. هر پنج کسب‌وکار پنج KPI می‌کشند و DM Sans، و در فارسی Vazirmatn، بار می‌شوند. اجرای کامل با `--prove` ۴۸ ثانیه طول کشید.
+- **`--prove`:** اول روی دو نسخهٔ خراب اجرا می‌شود و باید شکست بخورد:
+  - **بدون guard:** فایل `Growth-….js` و `react-….js` را کنار خودش می‌خواهد.
+  - **الگوی بی‌backslash:** الگو آن‌طور که نوشته شده به صفحه نمی‌رسد.
 
 ---
 
-## ۹. فهرست کامل درخواست‌ها هنگام بارگذاری
+## ۸. اسکرین‌شات‌ها
 
-ثبت‌شده با بررسی `hosts` هنگام باز کردن `/lab/admin/?profile=vpn&lang=en` در Chromium بدون کش. همه از همان میزبان‌اند؛ هیچ CDN، فونت گوگل، آنالیتیکس یا API‌ای نیست.
+همه در `screens-v2/` و WebP هستند. جمع ۴۷ تصویر حدود ۱٫۹ مگابایت است.
 
-| # | نوع | نشانی | چرا |
-|---|---|---|---|
-| ۱ | document | `/lab/admin/?profile=vpn&lang=en` | صفحه، با اسکریپت پیش از رنگ‌آمیزی |
-| ۲ | font | `/lab/admin/fonts/dm-sans-latin.woff2` | فونت لاتین (preload در `index.html`) |
-| ۳ | script | `/lab/admin/assets/index-B8krzujR.js` | اپ |
-| ۴ | script | `/lab/admin/assets/react-C5pd41F9.js` | React |
-| ۵ | script | `/lab/admin/assets/vendor-B7felsfy.js` | آیکون‌ها و clsx |
-| ۶ | script | `/lab/admin/assets/data-B9cgmAKg.js` | generator و پروفایل‌ها |
-| ۷ | script | `/lab/admin/assets/geometry-DrNzdAVU.js` | هندسهٔ نمودارها |
-| ۸ | stylesheet | `/lab/admin/assets/index-6t0sU-Zv.css` | CSS |
-| ۹ | font | `/lab/admin/fonts/Vazirmatn-Medium.woff2` | برچسب «فا» در کلید زبان (`unicode-range` فقط برای حروف فارسی) |
+### کیس‌استادی Spindle
 
-آیکن تب تا پیش از اجرای اپ همان فاوآیکن پورتفولیو است (`/favicon.svg`، از همین میزبان؛ Chromium در حالت headless آن را درخواست نمی‌کند، برای همین در فهرست بالا نیست) و بعد اپ نشانهٔ برند فعلی را به‌شکل یک `data:` URL جایش می‌گذارد. در فارسی (`?lang=fa`) علاوه بر فونت لاتین، Vazirmatn Regular و Bold هم پیش از رنگ‌آمیزی preload می‌شوند تا متن بعد از رسیدن فونت جابه‌جا نشود. باز کردن هر صفحه یا تب دیگر فقط chunk همان صفحه را از همین میزبان می‌گیرد (جدول بخش ۷). در بقیهٔ استفاده هیچ درخواستی فرستاده نمی‌شود: تیک‌های زنده، CSV (یک `Blob` محلی)، تغییر وضعیت رکورد و حالت‌های دمو همه داخل صفحه‌اند.
-
----
-
-## ۱۰. QA موجود پورتفولیو: قبل و بعد
-
-هر چهار اسکریپت دو بار اجرا شدند، با همان Chromium و پشت سر هم:
-
-- **baseline:** نسخهٔ خود اسکریپت‌ها در سایت تحویلی، روی build همان سایت (شاخهٔ `baseline`، روی پورت ۴۳۲۲).
-- **نهایی:** نسخهٔ این شاخه، روی build نهایی (روی پورت ۴۳۲۱).
-
-پیش‌نمایش single-file برای هر کدام از build خودش ساخته شد.
-
-| اسکریپت | baseline | نهایی | تفاوت |
-|---|---|---|---|
-| `check_single.py` (پیش‌نمایش آفلاین، همهٔ مسیرها) | ۰ خطا، ۰ درخواست مسدود | ۰ خطا، ۰ درخواست مسدود | خروجی یکسان |
-| `check_single_phone.py` (پیش‌نمایش روی موبایل) | ۰ خطا | ۰ خطا | خروجی یکسان |
-| `check_site.py` (۹ صفحه × ۳ عرض + reduced motion، با `stack_check`) | ۰ خطا | ۰ خطا | خروجی یکسان |
-| `audit.py` (۹ صفحه × ۷ عرض × ۲ تم) | ۱۹ مورد، در هر سه اجرا | ۱۹ مورد مشترک، به‌اضافهٔ ۰ تا ۳ خط ناپایدار «target … ×44» | همان ۱۹ مورد؛ خطوط اضافه یک خطای ناپایدار از پیش موجود است (پایین‌تر) |
-
-خروجی‌های سه اسکریپت اول با `diff` مقایسه شدند و یکسان‌اند.
-
-**۱۹ مورد مشترک `audit.py`** همان دو «not-bug» شناخته‌شده‌اند که docstring خود اسکریپت نام برده:
-
-- نقطهٔ مرجانی لوگوتایپ (`.wm-dot`، ۳٫۵۴:۱، استثنای لوگو در WCAG 1.4.3)؛
-- صفحهٔ ۴۰۴ پیش‌فرض `python3 -m http.server` برای `/does-not-exist/`. این صفحه مال سرور آزمون است، نه سایت، و خطای JS «Failed to load resource» هم همان پاسخ ۴۰۴ است.
-
-**خطوط ناپایدار «target … ×44»:** `audit.py` روی build نهایی سه بار اجرا شد و ۱۹، ۲۰ و ۲۲ مورد گزارش کرد؛ روی baseline هم سه بار، هر سه بار ۱۹. هر خط اضافه از یک نوع است: یک پیوند جدول «facts» در کیس‌استادی‌ها (`GitHub 49x44`، `gozarx.net 72x44`) که زیر ۴۴ پیکسل شمرده شده.
-
-- **علت:** این پیوندها با `.facts a { min-height: 44px }` دقیقاً ۴۴ پیکسل‌اند. موقعیت عمودی‌شان کسری است، پس `getBoundingClientRect` گاهی ارتفاع را ۴۳٫۹۹۹۹ می‌دهد. اسکریپت آن را `44` چاپ می‌کند ولی با `< 44` می‌سنجد.
-- **شاهد این‌که از قبل بوده** (هر دو build، با تکرار دقیق مراحل `audit.py`):
-  - `GitHub` در `/projects/jozveyar/` (تیره، ۷۲۰): روی baseline در ۲ اجرا از ۵ زیر ۴۴ بود، و روی build نهایی در ۱ از ۵.
-  - در اندازه‌گیری دقیق‌تر در ۳۹۰: `GitHub` در `/projects/tooti/` روی baseline یک بار از ۶ و روی build نهایی سه بار از ۶ ۴۳٫۹۹۹۹ بود. این صفحه در این شاخه هیچ تغییری نکرده است.
-  - پیوندهای `/projects/gozarx/` در همان اندازه‌گیری هر ۶ بار دقیقاً ۴۴٫۰۰۰۰ بودند.
-- **تصمیم:** این شاخه آستانهٔ `audit.py` را عوض نکرد، چون اسکریپت مال سایت است و این خطا به `/lab/admin/` ربطی ندارد. پیشنهاد برای مالک در بخش ۱۳ است.
-
-**در اجرای میانی یک مورد واقعی دیده شد که بسته شد:** کنتراست ۱٫۰۰ دکمهٔ «Live Demo» روی کارت Work. دکمه داخل کارت نیست و پس‌زمینه‌اش نیمه‌شفاف بود، پس ممیزی آن را روی رنگ صفحه سنجید. با پس‌زمینهٔ مات ساخته‌شده از رنگ کارت درست شد.
-
-**قاعده‌های صریح برای `/lab/admin/` در QA موجود** (هر کدام با کامنت در خود کد):
-
-| فایل | قاعده | چرا |
-|---|---|---|
-| `scripts/qa/check_single.py` | `dist/lab/` از فهرست صفحه‌های مورد انتظار پیش‌نمایش کنار گذاشته می‌شود. | دمو یک اپ جدا با HTML خودش است و طبق تصمیم شما نسخهٔ single-file ندارد. |
-| `scripts/single-file.mjs` | صفحه‌های `lab/` جمع نمی‌شوند و پیوندهای `/lab/` به نشانی کامل سایت (از canonical صفحهٔ اصلی) تبدیل می‌شوند. | یک فایل آفلاین نمی‌تواند اپ دوم را حمل کند؛ پیوند باید به سایت منتشرشده برود، نه یک hash route مرده. |
-| `scripts/qa/audit.py` | `/lab/admin/` در `ROUTES` است (مقصد معتبر پیوند) ولی در `PAGES` نیست؛ query پیوندهای داخلی (`?profile=vpn`) هنگام بررسی پیوند مرده نادیده گرفته می‌شود. | همهٔ بررسی‌های `audit.py` پوستهٔ پورتفولیو (`.bar`، نوار تب) را فرض می‌کنند که دمو ندارد. دمو را `check_admin_demo.py` می‌سنجد. query حالتی از همان صفحه است، نه صفحهٔ دیگر. |
-| `scripts/qa/check_site.py`، `scripts/qa/check_single_phone.py` | بدون تغییر. | — |
-
----
-
-## ۱۱. ادغام با پورتفولیو
-
-- **کیس‌استادی GozarX:** دکمهٔ `btn-gray` با متن «Try the Live Demo» زیر lead (نام دسترس‌پذیر: «Try the Live Demo of the admin panel»). فیلد جدید `lab` در front matter پروژه (`src/content.config.ts`، یک مسیر) آن را روشن می‌کند؛ برای GozarX مقدارش `/lab/admin/?profile=vpn` است.
-- **صفحهٔ Work، دسکتاپ:** کارت‌ها یک لینک کامل‌اند و لینک داخل لینک مجاز نیست، پس دکمه یک لینک جداست در یک لایهٔ هم‌اندازهٔ کارت که در **همان خانهٔ grid** قرار می‌گیرد (هر کارت حالا `grid-area` خودش را دارد)، با همان offset چسبان کارت می‌چسبد، و با `--p` همراه محتوای کارت کوچک و کم‌نور می‌شود؛ کارت بعدی چون در DOM بعد از آن است رویش را می‌پوشاند. پس‌زمینهٔ دکمه مات و از رنگ خود کارت ساخته شده (`color-mix`)، چون ممیزی سایت پس‌زمینه را از DOM می‌خواند و لایه داخل کارت نیست. این دکمه فقط در صفحهٔ Work است (پراپ `lab`)، نه صفحهٔ اصلی.
-- **صفحهٔ Work، موبایل:** دکمهٔ `btn-gray` «Live Demo» زیر کارت GozarX.
-
-شرط‌های پذیرش، اندازه‌گیری‌شده با بررسی `entry` (کارت GozarX در موقعیت چسبانش؛ مختصات به پیکسل):
-
-| عرض | تم | قاب کارت (چپ، بالا، راست، پایین) | دکمه | اندازه | فاصله تا قاب | روی متن، لوگو یا تصویر؟ | کنتراست متن دکمه |
-|---|---|---|---|---|---|---|---|
-| ۱۰۲۴ | روشن | 48, 100, 976, 640 | 794, 148, 928, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۱۲۸۰ | روشن | 80, 100, 1200, 640 | 1018, 148, 1152, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۱۴۴۰ | روشن | 160, 100, 1280, 640 | 1098, 148, 1232, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۱۹۲۰ | روشن | 400, 100, 1520, 640 | 1338, 148, 1472, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۲۵۶۰ | روشن | 720, 100, 1840, 640 | 1658, 148, 1792, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۱۰۲۴ | تیره | 48, 100, 976, 640 | 794, 148, 928, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۱۲۸۰ | تیره | 80, 100, 1200, 640 | 1018, 148, 1152, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۱۴۴۰ | تیره | 160, 100, 1280, 640 | 1098, 148, 1232, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۱۹۲۰ | تیره | 400, 100, 1520, 640 | 1338, 148, 1472, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-| ۲۵۶۰ | تیره | 720, 100, 1840, 640 | 1658, 148, 1792, 192 | ۱۳۴×۴۴ | ۴۸ | نه | ۱۴٫۴۷:۱ |
-
-- «روی متن، لوگو یا تصویر؟» یعنی جعبهٔ دکمه، با ۴ پیکسل حاشیه، با هیچ‌کدام از این‌ها هم‌پوشانی ندارد: شماره، عنوان، خلاصه، عدد و برچسبش، وضعیت، چیپ‌های stack، کاشی لوگو و تصویر سایت. شرط فاصله تا قاب دست‌کم ۱۶ پیکسل است.
-- کنتراست، متن سفید دکمه است روی پس‌زمینهٔ مات خود دکمه، که روی رنگ و درخشش کارت ترکیب شده. کارت GozarX در هر دو تم همان رنگ تیرهٔ `#020617` را دارد، برای همین عددها در دو تم یکی است. لبهٔ دکمه یک خط سفید ۲۴٪ و سایه دارد.
-- موبایل (۳۹۰، هر دو تم): دکمهٔ «Live Demo» زیر کارت است، دست‌کم ۴۴×۴۴ پیکسل، با کنتراست ۴٫۵:۱ روی گرادیان خودش، و به `/lab/admin/` می‌رود. دکمهٔ «Try the Live Demo» کیس‌استادی هم دست‌کم ۴۴ پیکسل است و بررسی رویش کلیک می‌کند: دمو باید باز شود و صفحه‌اش رندر شود.
-- شکست عمدی: وقتی CSS دکمه را روی عنوان کارت می‌برد، بررسی در هر چهار عرض اول همین را گزارش می‌کند (بخش ۸).
-
-`stack_check` در `check_site.py` بدون هیچ تغییری اجرا شد و رد می‌شود (بخش ۱۰).
-
----
-
-## ۱۲. محدودیت‌های شناخته‌شده
-
-- **دادهٔ ساختگی به تاریخ امروز بازدیدکننده بسته است.** نرخ رشد هر کسب‌وکار از تاریخ مرجع ۲۰۲۶-۱۰-۰۱ حساب می‌شود؛ اگر دمو سال‌ها بعد دیده شود، عددها با همان نرخ بزرگ‌تر می‌شوند.
-- **تنها «نوشتن»، تغییر وضعیت رکورد، فقط در همان تب می‌ماند**؛ عمداً، چون جایی برای ذخیره نیست.
-- **هیچ error boundary سراسری نیست.** یک استثنای واقعی هنگام render (نه حالت خطای شبیه‌سازی‌شدهٔ منوی دمو، که هر بخش حالت خطای خودش را دارد) کل اپ را از صفحه برمی‌دارد و فقط بنر پورتفولیو می‌ماند. بررسی `hosts` در هر اجرا نشان می‌دهد که در همهٔ صفحه‌های هر پنج کسب‌وکار هیچ خطای کنسولی نیست.
-- **جابه‌جایی نوار بالا هنگام رفتن از داشبورد به صفحه‌های دیگر:** پنل کناری فقط کنار داشبورد است، پس دکمه‌های نوار بالا با رفتن به جدول‌ها کمی به راست می‌روند. این بلافاصله بعد از کلیک است (طبق تعریف CLS، تغییر پس از ورودی کاربر شمرده نمی‌شود) و بررسی `layout` آن را جدا نمی‌سنجد.
-- **نمودار heatmap و نوارهای uptime فقط با hover/عنوان (title) مقدار هر خانه را می‌گویند؛** جایگزین متنی‌شان جدول کامل (heatmap) و خلاصهٔ `aria-label` (uptime) است.
-- **فونت فارسی روی صفحهٔ انگلیسی** یک فایل حدود ۵۰ کیلوبایتی بار می‌کند (برچسب «فا»).
-- **وابستگی‌های زمان build:** `npm audit` روی baseline دو مورد high دارد (`http-cache-semantics` و `astro` که به آن وابسته است، [GHSA-ch52-4w7c-c8xp](https://github.com/advisories/GHSA-ch52-4w7c-c8xp)) و روی این شاخه هفت مورد: همان دو، به‌اضافهٔ زنجیرهٔ Tailwind 3.4 (`braces` ← `micromatch` ← `fast-glob`/`chokidar` ← `tailwindcss`؛ [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)، DoS با الگوهای glob بسیار تودرتو). Tailwind فقط هنگام build روی فایل‌های خود ریپو اجرا می‌شود و چیزی از آن به مرورگر نمی‌رسد. رفعش ارتقا به Tailwind 4 است که تنظیماتش فرق دارد؛ خارج از دامنهٔ این PR ماند.
-- **deploy:** اکشن `withastro/action` به‌طور پیش‌فرض اسکریپت `build` پکیج را اجرا می‌کند ([مستندات Astro](https://docs.astro.build/en/guides/deploy/github))، پس دمو در deploy روی GitHub Pages هم ساخته می‌شود. چون PR به `baseline` است، deploy واقعی تا ادغام در `main` اتفاق نمی‌افتد و روی سرور واقعی آزموده نشده.
-
----
-
-## ۱۳. مسائل محتوایی برای مالک
-
-- **مجوز:** متن کیس‌استادی GozarX (`src/content/projects/gozarx.md`) می‌گوید «The code is open source under AGPL-3.0»، ولی ریپوی GozarX هیچ فایل `LICENSE` ندارد. طبق دستور، در هیچ‌کدام از دو ریپو چیزی عوض نشد. یکی از این دو باید درست شود: یا فایل LICENSE به GozarX اضافه شود، یا جملهٔ مجوز از کیس‌استادی برداشته شود.
-- **منشأ کد دمو:** دمو از پنل مدیریت GozarX مشتق شده (بخش ۳). اگر GozarX واقعاً AGPL-3.0 است، کد مشتق‌شده هم باید با همان مجوز و با ذکر منبع منتشر شود؛ اگر نه، تصمیم مجوز پورتفولیو با شماست. فعلاً README دمو منشأ را نوشته ولی مجوزی اعلام نمی‌کند.
-- **ارقام واقعی در کیس‌استادی:** `gozarx.md` (و کارت‌ها) ارقام واقعی GozarX را نشان می‌دهند و کامنت خود فایل می‌گوید پیش از انتشار تأیید شوند. دمو هیچ‌کدام از آن‌ها را استفاده نمی‌کند.
-- **یک خطای ناپایدار در `audit.py`:** هدف لمسی دقیقاً ۴۴ پیکسلی گاهی ۴۳٫۹۹۹۹ اندازه گرفته می‌شود و گزارش می‌شود (بخش ۱۰). ساده‌ترین رفع در خود اسکریپت است، اگر بخواهید: `Math.round(r.height) < 44` به‌جای `r.height < 44`. این شاخه به آن دست نزد.
-- **متن انگلیسی دکمه‌ها:** «Try the Live Demo» (کیس‌استادی) و «Live Demo» (کارت‌ها) به سبک Title Case دکمه‌های فعلی سایت نوشته شده‌اند؛ اگر لحن دیگری می‌خواهید، فقط همین دو رشته‌اند.
-
----
-
-## ۱۴. بررسی نام برندها
-
-هر نام در همان صنعت جستجو شد؛ سه نام اول عوض شدند:
-
-| کسب‌وکار | نام اول | یافته | نام نهایی |
-|---|---|---|---|
-| فروشگاه آنلاین | Cartwell | اپ Shopify با همین نام: [Cartwell: Upsell Cart Drawer](https://apps.shopify.com/cartwell) | **Fernloft** |
-| آکادمی آنلاین | Brightpath | محصول آموزشی YouScience Brightpath ([خبر](https://www.youscience.com/resources/press/youscience-wins-2024-tech-learning-award-of-excellence/)) و شرکت BrightPath Education Services ([CB Insights](https://www.cbinsights.com/company/brightpath-education-services)) | **Quillstone** |
-| چاپ و ارسال | Inkpost | فروشگاه ایرلندی شارژ جوهر ([Trustpilot](https://nz.trustpilot.com/review/inkpost.ie)) | **Proofpost** |
-| فروشگاه آنلاین (گزینهٔ دوم) | Pebblecart | تم «Pebble» در Shopify ([Shopify Themes](https://themes.shopify.com/themes/pebble)) | کنار گذاشته شد |
-
-برای Passway (VPN)، Loopdesk (SaaS)، Fernloft، Quillstone و Proofpost در همان صنعت برند شناخته‌شده‌ای پیدا نشد.
-
----
-
-## ۱۵. یادداشت‌های مخزن
-
-- شاخهٔ `baseline` تنها شاخهٔ ریپوی خالی بود که push شد، پس GitHub آن را **شاخهٔ پیش‌فرض** ریپو کرد. اگر بعداً `main` ساخته شود، شاخهٔ پیش‌فرض را در تنظیمات ریپو عوض کنید (deploy روی push به `main` اجرا می‌شود).
-- **ریپوی `BoofKoor/sedmehdi` عمومی (public) است.** پس هر چه در آن push شده، از جمله اطلاعات تماس و رزومهٔ موقت شاخهٔ `baseline` و ارقام کیس‌استادی GozarX، برای همه قابل دیدن است، حتی بدون deploy. اگر این اطلاعات نباید پیش از تأیید دیده شوند، ریپو را تا آن موقع private کنید.
-- `preview/` از قبل در `.gitignore` خود سایت بود.
-- `scripts/qa/__pycache__` و فایل‌های build کامیت نشده‌اند؛ zip پوشهٔ `dist/` پیوست است.
-
----
-
-## ۱۶. اسکرین‌شات‌ها
-
-همه با `apps/admin-demo/scripts/shots.py` از همین build گرفته شده‌اند (Chromium، مقیاس ۱، بعد از پایان count-up و انیمیشن ورود نمودار). در دو تصویر پورتفولیو، عدد واقعی کارت GozarX، دامنه و تصویر سایت واقعی‌اش محو شده‌اند تا در پوشهٔ `screens/` هیچ رقم یا تصویر واقعی‌ای نباشد. بقیه فقط دادهٔ ساختگی دارند.
-
-### هر پنج کسب‌وکار در ۱۴۴۰، روشن و تیره
-
-| کسب‌وکار | روشن | تیره |
-|---|---|---|
-| Passway (`vpn`) | ![vpn روشن](screens/vpn-1440-light.png) | ![vpn تیره](screens/vpn-1440-dark.png) |
-| Loopdesk (`saas`) | ![saas روشن](screens/saas-1440-light.png) | ![saas تیره](screens/saas-1440-dark.png) |
-| Fernloft (`ecommerce`) | ![ecommerce روشن](screens/ecommerce-1440-light.png) | ![ecommerce تیره](screens/ecommerce-1440-dark.png) |
-| Quillstone (`education`) | ![education روشن](screens/education-1440-light.png) | ![education تیره](screens/education-1440-dark.png) |
-| Proofpost (`print`) | ![print روشن](screens/print-1440-light.png) | ![print تیره](screens/print-1440-dark.png) |
-
-### عرض‌های دیگر، فارسی و پالت فرمان
-
-| فایل | چه چیزی |
+| ۱۴۴۰، روشن | ۳۹۰، تیره |
 |---|---|
-| [`vpn-768-dark.png`](screens/vpn-768-dark.png) | تبلت ۷۶۸، تیره: کاشی‌ها در دو ستون و کنترل بازه زیر زبانه‌ها؛ پنل کناری زیر محتوای داشبورد می‌آید (بیرون از قاب تصویر) |
-| [`vpn-390-light.png`](screens/vpn-390-light.png)، [`vpn-390-dark.png`](screens/vpn-390-dark.png) | موبایل ۳۹۰ با نوار پایین |
-| [`fa-rtl-1440-light.png`](screens/fa-rtl-1440-light.png) | فارسی/RTL در ۱۴۴۰ (Fernloft): چیدمان، نمودار و رقم‌ها آینه/فارسی |
-| [`fa-rtl-390-dark.png`](screens/fa-rtl-390-dark.png) | فارسی/RTL در ۳۹۰، تیره |
-| [`palette-open-1440-dark.png`](screens/palette-open-1440-dark.png) | پالت فرمان (Ctrl+K) با جستجوی «fern» |
+| <img src="screens-v2/case-study-1440-light.webp" width="420" alt="Spindle case study at 1440, light"> | <img src="screens-v2/case-study-390-dark.webp" width="200" alt="Spindle case study at 390, dark"> |
 
-| ۷۶۸ تیره | ۳۹۰ روشن | ۳۹۰ تیره | فارسی ۳۹۰ تیره |
-|---|---|---|---|
-| ![768 تیره](screens/vpn-768-dark.png) | ![390 روشن](screens/vpn-390-light.png) | ![390 تیره](screens/vpn-390-dark.png) | ![فارسی 390](screens/fa-rtl-390-dark.png) |
+کیس‌استادی GozarX با خط پیوند به Spindle: [۱۴۴۰، روشن](screens-v2/gozarx-case-1440-light.webp).
 
-![فارسی ۱۴۴۰](screens/fa-rtl-1440-light.png)
+### چهار کارت، بزرگ‌نمایی ۲×
 
-![پالت فرمان](screens/palette-open-1440-dark.png)
+| | دسکتاپ (stack، صفحهٔ Work) | موبایل (فهرست، صفحهٔ Work) |
+|---|---|---|
+| ۰۱ GozarX | <img src="screens-v2/card-1-desktop.webp" width="460" alt="GozarX card, desktop"> | <img src="screens-v2/card-1-phone.webp" width="220" alt="GozarX card, phone"> |
+| ۰۲ Spindle | <img src="screens-v2/card-2-desktop.webp" width="460" alt="Spindle card, desktop"> | <img src="screens-v2/card-2-phone.webp" width="220" alt="Spindle card, phone"> |
+| ۰۳ Tooti | <img src="screens-v2/card-3-desktop.webp" width="460" alt="Tooti card, desktop"> | <img src="screens-v2/card-3-phone.webp" width="220" alt="Tooti card, phone"> |
+| ۰۴ Jozveyar | <img src="screens-v2/card-4-desktop.webp" width="460" alt="Jozveyar card, desktop"> | <img src="screens-v2/card-4-phone.webp" width="220" alt="Jozveyar card, phone"> |
 
-### بیشتر از فهرست خواسته‌شده
+### Nodemill در دو تم و دو زبان
 
-| فایل | چه چیزی |
-|---|---|
-| [`records-1440-light.png`](screens/records-1440-light.png) | جدول Accounts در Loopdesk: جستجو، فیلتر، وضعیت، مرتب‌سازی، CSV |
-| [`health-1440-dark.png`](screens/health-1440-dark.png) | صفحهٔ سلامت Proofpost: بررسی‌ها، uptime نود روزه، رخدادها |
-| [`growth-fa-1440-dark.png`](screens/growth-fa-1440-dark.png) | تب رشد Quillstone به فارسی |
-| [`state-empty-1440-light.png`](screens/state-empty-1440-light.png) | حالت «فضای کاری خالی» از منوی دمو |
-| [`state-error-1440-dark.png`](screens/state-error-1440-dark.png) | حالت «پاسخ‌های خطا» از منوی دمو، با Retry در هر بخش |
-| [`portfolio-work-pill-1440-dark.png`](screens/portfolio-work-pill-1440-dark.png) | دکمهٔ «Live Demo» روی کارت GozarX در صفحهٔ Work |
-| [`portfolio-case-button-390-light.png`](screens/portfolio-case-button-390-light.png) | دکمهٔ «Try the Live Demo» در کیس‌استادی GozarX، موبایل |
+| | روشن | تیره |
+|---|---|---|
+| انگلیسی، ۱۴۴۰ | <img src="screens-v2/hosting-1440-en-light.webp" width="420" alt="Nodemill, English, light"> | <img src="screens-v2/hosting-1440-en-dark.webp" width="420" alt="Nodemill, English, dark"> |
+| فارسی، ۱۴۴۰ | <img src="screens-v2/hosting-1440-fa-light.webp" width="420" alt="Nodemill, Persian, light"> | <img src="screens-v2/hosting-1440-fa-dark.webp" width="420" alt="Nodemill, Persian, dark"> |
+| انگلیسی، ۳۹۰ | <img src="screens-v2/hosting-390-en-light.webp" width="200" alt="Nodemill on a phone, English, light"> | <img src="screens-v2/hosting-390-en-dark.webp" width="200" alt="Nodemill on a phone, English, dark"> |
+| فارسی، ۳۹۰ | <img src="screens-v2/hosting-390-fa-light.webp" width="200" alt="Nodemill on a phone, Persian, light"> | <img src="screens-v2/hosting-390-fa-dark.webp" width="200" alt="Nodemill on a phone, Persian, dark"> |
+
+---
+
+## ۹. یادداشت‌ها
+
+### خطاهای خودم
+
+شش اشتباه خودم پیدا شد. یکی را تست‌ها گرفتند، یکی را بازبینی تصویرها، و چهار تا را اجرای قبل/بعد:
+
+1. **اصلاح اول B2 (B2′):** اسکرول را داخل خود رویداد focus صادر می‌کرد. Chromium در همان لحظه کارت سوم را خودش اسکرول کرده بود و اسکرول من آن را لغو کرد. `carousel_focus_check` در ۳۹۰، ۳۶۰ و ۳۲۰، با Reduce Motion و بدون آن، ۱۶ خطا داد. اصلاح دوم یک فریم صبر می‌کند و فقط کارتی را جابه‌جا می‌کند که هنوز کامل پیدا نیست.
+2. **اصلاح B12 (B12′):** عنوان را متن معمولی کرد و عنوان‌های یک‌خطی از وسط کاشی لوگو بالا رفتند. این را در بازبینی تصویر B13 دیدم. اول تستی نوشتم (`title_logo_check`) که روی همان کامیت ۳۰ خطا داد، بعد اصلاحش کردم.
+3. **نقطهٔ کور ممیزی:** هر متنی را که داخل یک ناحیهٔ اسکرول‌دار بود کنار می‌گذاشت. پس روی دسکتاپ تقریباً هیچ متنی از کنسول دمو را نمی‌سنجید و B5 را نمی‌دید. وقتی جدول قبل/بعد را پر می‌کردم پیدایش کردم. اصلاح شد (`fb35476`) و ممیزی نسخهٔ قبل با ابزار اصلاح‌شده دوباره اجرا شد. عددهای بخش ۳ از همین اجرای دوم است.
+4. **بررسی `entry`:** نوار پایین موبایل را لینکِ روی کارت می‌شمرد (`fb2581b`).
+5. **بررسی `words`:** نگاشت `vpn` را با backtick نمی‌شناخت (`ada7da9`).
+6. **گام فوکوس ممیزی:** فوکوس را درست در لحظهٔ فشردن Tab می‌سنجید. carousel صفحهٔ Home، طبق اصلاح B2، کارت فوکوس‌شده را یک فریم بعد با اسکرول نرم به دید می‌آورد. پس ممیزی کارت‌های Spindle و Jozveyar را در ۳۹۰ و ۷۲۰ «پنهان» گزارش کرد. حالا بعد از هر Tab صبر می‌کند تا والدهای اسکرول‌دار عنصر و خود صفحه سه فریم ثابت بمانند (حداکثر یک ثانیه) (`522b686`). روی نسخهٔ قبل کارت Tooti اصلاً اسکرول نمی‌شود و همچنان گزارش می‌شود. ممیزی سایت در ۷۲۰، ۳۹۰ و ۳۲۰، که نوار ثابت دارند، با همین نسخه برای قبل و بعد دوباره اجرا شد. در عرض‌های بزرگ‌تر هیچ Tab-ی اسکرول نرم راه نمی‌اندازد، پس سنجیدن زودتر فقط می‌توانست خطای بیشتری نشان دهد؛ آنجا هم صفر بود. برای اطمینان، ممیزی سایت در ۱۴۴۰ با نسخهٔ جدید دوباره اجرا شد و همان نتیجه را داد.
+
+موردهای ۴ تا ۶ روی صفحهٔ درست شکست می‌خوردند. با `--prove` دیده نمی‌شدند، چون آنجا هر بررسی فقط باید روی صفحهٔ خراب شکست بخورد. اجرای واقعی روی نسخهٔ نهایی نشانشان داد.
+
+### مواردی که ممیزی گزارش می‌کند ولی باگ نیستند
+
+- **نقطهٔ لوگوتایپ** (`.wm-dot` و `.demo-wm-dot`): کنتراستش ۳٫۴۶ تا ۳٫۵۴:۱ است. بخشی از لوگوست و WCAG 1.4.3 لوگو را استثنا می‌کند. ممیزی آن را کنار می‌گذارد.
+- **خطای کنسول صفحهٔ ۴۰۴:** «Failed to load resource … 404» خطای خود درخواست صفحه است، نه خطای کد. ممیزی همین یک مورد را کنار می‌گذارد.
+- **`http` و `js-error` روی `/projects/spindle/` در اجرای قبل:** این صفحه آن موقع وجود نداشت.
+
+### تصمیم‌های طراحی این دور
+
+- **گوشی افقی و پنجره‌های کوتاه (زیر 42.5em ارتفاع):** جلوهٔ stack کارت‌ها خاموش است. کارت‌ها ستونی عادی‌اند و هر کدام به اندازهٔ متنش. دیده‌شدن متن مقدم بر جلوه است؛ این حد با فونت بزرگ‌ترِ کاربر هم بالا می‌رود.
+- **بین ۷۲۱ تا ۱۰۲۳:** نسبت ستون متن به تصویر ۱٫۲۵ به ۰٫۷۵ شد. تصویر کارت تزئینی است و از لبهٔ کارت بیرون می‌رود؛ متن کار اصلی کارت است.
+- **خلاصهٔ Spindle:** «each from a single profile» از آن برداشته شد. همین ایده با عدد بزرگ «5 Business profiles» زیر خلاصه دیده می‌شود و در بدنهٔ کیس‌استادی هم آمده است.
+- **فکت «Live» در کیس‌استادی:** پیوندش کمی پایین‌تر از برچسبش است، چون جعبهٔ پیوند ۴۴ پیکسل ارتفاع دارد (هدف لمسی). در GozarX هم همین است.
+- **پیوندهای خروجی نسخهٔ تک‌فایلی:** پیوندهای بنر، منو و پالت در `preview/spindle-admin-demo.html` به سایت منتشرشده (`https://sedmehdi.com`) می‌روند، چون آفلاین سایتی کنار فایل نیست. فقط با کلیک کاربر باز می‌شوند و در بارگذاری هیچ درخواستی نمی‌سازند.
+
+### حریم خصوصی
+
+- **داده:** همه‌چیز ساختگی است. Nodemill، نام سرورها و مشتری‌ها از generator قطعی می‌آیند. نام دیتاسنترها شهرهای عمومی با کد فرودگاه است، مثل `fra` و `ams`.
+- **GozarX:** ریپوی GozarX فقط خوانده شد و هیچ داده‌ای از آن وارد نشد.
+- **میزبان دیگر:** صفر درخواست، هم در دمو (بررسی `hosts` و ممیزی) و هم در نسخهٔ تک‌فایلی.
+
+### zip
+
+`dist/` بعد از build نهایی zip شد و جدا پیوست می‌شود، بدون کامیت.
