@@ -11,7 +11,7 @@ Astro, static output. Design tokens in `src/styles/tokens.css`.
 - `apps/admin-demo/`: the Spindle Admin Kit demo, a separate React app (npm workspace) built into `dist/lab/admin/` by `npm run build`. A project whose `demo` is a path on this site (the kit's `/lab/admin/`) gets a "Try the Live Demo" button on its case study. See `apps/admin-demo/README.md`.
 
 ## Hosting
-- GitHub Pages: pushing to `main` runs `.github/workflows/deploy.yml` (Astro action v6, Node 24 by default) and publishes `dist/`.
+- GitHub Pages: pushing to `main` runs `.github/workflows/deploy.yml` (Astro action v6 on Node 22, as the Dockerfile) and publishes `dist/`.
 - Custom domain: set it in the repository under Settings > Pages > Custom domain. With an Actions deployment GitHub ignores `public/CNAME`; the file is kept only as a record.
 - Own server (optional, later): `Dockerfile`, `nginx.conf` and `docker-compose.yml` are kept for that.
 

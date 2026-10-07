@@ -18,6 +18,9 @@ jobs:
         uses: actions/checkout@v7
       - name: Install, build and upload the site
         uses: withastro/action@v6
+        with:
+          # the version the site, the demo and the QA are built and checked on (and the Dockerfile's); the action defaults to 24
+          node-version: 22
 
   deploy:
     needs: build

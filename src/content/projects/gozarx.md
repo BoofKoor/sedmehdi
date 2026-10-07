@@ -1,7 +1,8 @@
 ---
-# Real project. Facts from Mehdi's notes (August 2026); confirm the numbers and the wording before publishing.
+# Real project. Figures from Mehdi's notes (August 2026), wording confirmed by him for publishing (October 2026).
+# What it says about the code follows github.com/BoofKoor/GozarX: the repository has no licence, so it is not called open source.
 title: "GozarX"
-summary: "A free, open-source service that gives people in Iran a working VPN config every day, through a Telegram bot and a website."
+summary: "A free service that gives people in Iran a working VPN config every day, through a Telegram bot and a website."
 role: "Solo developer and operator"
 status: "In production"
 stack: ["Python", "aiogram 3", "FastAPI", "PostgreSQL", "Redis", "Docker Compose", "Next.js", "React"]
@@ -32,4 +33,4 @@ For a service like this, privacy comes first. I audited every place a user's IP 
 
 ## Results
 
-By August 2026: about 119,000 registered users, 47,000 active in any two-week window, around 10,000 configs delivered a day and 200 TB of traffic served. The code is open source under AGPL-3.0.
+By August 2026: about 119,000 registered users, 47,000 active in any two-week window, around 10,000 configs delivered a day and 200 TB of traffic served.
