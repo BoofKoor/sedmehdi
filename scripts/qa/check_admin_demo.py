@@ -25,8 +25,9 @@ Checks, each a function returning its problems:
   names      every visible control, dialog, image, tab panel and table has an accessible name (the icon-only buttons
              above all), on every page and overlay of every business, in both languages, at 1440 and 390
   labels     text the reading direction or its room can garble, measured: a list's figure and its share or note stay
-             apart and in reading order, the radar's labels stay inside the figure and off the chart, and an
-             "up / total" pair reads left to right, for every business in both languages, at 1440 and 390
+             apart and in reading order, the radar's labels stay inside the figure and off the chart, an "up / total"
+             pair reads left to right, and a person's @handle reads left to right in the tables and in a record's
+             dialog, for every business in both languages, at 1440 and 390
   words      none of the retired VPN vocabulary (VPN, config, claim, squad, trial; کانفیگ, آزمایشی and the like) anywhere:
              in the built files, in every page's text, labels and titles for every business in both languages, and in
              every CSV. The one exception is the alias that sends the old `vpn` id to `hosting`
@@ -702,6 +703,20 @@ LABELS = r"""() => {
   return out;
 }"""
 
+# A person's handle ("@arman.t169") is Latin inside Persian: unless it is isolated left to right, the bidi algorithm
+# carries its "@" to the far end ("arman.t169@"). Every handle on the page, a record's dialog included, is measured: its
+# "@" has to sit left of its last character.
+HANDLES = r"""() => {
+  const out = [], walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const at = (t, i) => { const r = document.createRange(); r.setStart(t, i); r.setEnd(t, i + 1); return r.getBoundingClientRect(); };
+  for (let t; (t = walk.nextNode());) {
+    const m = t.textContent.match(/^\s*(@[A-Za-z0-9._]+)\s*$/); if (!m) continue;
+    const i0 = t.textContent.indexOf('@'), a = at(t, i0), b = at(t, i0 + m[1].length - 1);
+    if (!a.width || !b.width) continue;
+    if (a.left >= b.left) out.push(`handle "${m[1]}" reads right to left, its "@" at the end${t.parentElement.closest('[role=dialog]') ? ' (record dialog)' : ''}`);
+  }
+  return out; }"""
+
 async def check_labels(browser, fault=None):
     problems = []
     for w, mobile, pages in [(1440, False, ['#/', '#/growth', '#/behaviour', '#/health']), (390, True, ['#/', '#/growth', '#/behaviour'])]:
@@ -712,6 +727,14 @@ async def check_labels(browser, fault=None):
                 for h in pages:
                     await nav(pg, h)
                     for x in (await pg.evaluate(LABELS))[:2]: problems.append(f'{w}px {p} {lang} {h}: {x}')
+                # the people in the tables, and the first record's dialog, whose title carries the handle too
+                for h in await entity_paths(pg):
+                    await nav(pg, h)
+                    for x in (await pg.evaluate(HANDLES))[:2]: problems.append(f'{w}px {p} {lang} {h}: {x}')
+                    # a table row on a desktop, a card on a phone
+                    await pg.locator('tbody tr[tabindex="0"]:visible, button[data-row]:visible').first.click(); await pg.wait_for_timeout(250)
+                    for x in (await pg.evaluate(HANDLES))[:2]: problems.append(f'{w}px {p} {lang} {h}: {x}')
+                    await pg.keyboard.press('Escape'); await pg.wait_for_timeout(150)
             await ctx.close()
     return problems
 

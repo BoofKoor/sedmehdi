@@ -23,6 +23,8 @@ export function RecordDialog({ entity: e, row, status, now, onClose }: { entity:
   const trend = rowTrend(p, e, row, now);
   const activity = rowActivity(p, e, row, now);
   const name = recordName(e, row.cells, locale);
+  // A person's handle is Latin: isolated left to right, as in the table, or Persian carries its "@" to the far end.
+  const handle = recordSub(e, row.cells);
   const statusCol = e.columns.find((c) => c.kind === "status");
   const sum = trend ? trend.reduce((a, b) => a + b.value, 0) : 0;
 
@@ -33,7 +35,17 @@ export function RecordDialog({ entity: e, row, status, now, onClose }: { entity:
   };
 
   return (
-    <Dialog onClose={onClose} title={name} sub={recordSub(e, row.cells)} testId="record" className="max-w-xl">
+    <Dialog
+      onClose={onClose}
+      title={name}
+      sub={handle && (
+        <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+          {handle}
+        </span>
+      )}
+      testId="record"
+      className="max-w-xl"
+    >
       <div className="space-y-5">
         {statusCol && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-surface-raised px-4 py-3">
