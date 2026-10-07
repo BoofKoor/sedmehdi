@@ -172,7 +172,10 @@ STATE = r"""() => ({ profile: document.documentElement.dataset.profile, theme: d
   empty: document.querySelectorAll('[data-state="empty"]').length, trend: document.querySelectorAll('[data-testid="trend"] svg path').length,
   range: (document.querySelector('[data-testid="range"] [aria-checked="true"]') || {}).dataset?.value || null })"""
 
-SETTLED = "() => !document.querySelector('[data-state=\"loading\"]') && !!document.querySelector('[data-page]')"
+# Settled: no loading state and no Suspense fallback (the page and tab skeletons are aria-busy), and a page is mounted.
+# Without the aria-busy part a lazy page's chunk was still on its way when a check measured: on localhost it lands
+# within the 120ms nav() waits, on sedmehdi.com it took up to 0.26s and render and labels counted an empty page.
+SETTLED = "() => !document.querySelector('[data-state=\"loading\"], [aria-busy=\"true\"]') && !!document.querySelector('[data-page]')"
 
 
 # ------------------------------------------------------------------------------------------------------------- faults

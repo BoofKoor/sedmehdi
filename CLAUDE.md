@@ -61,6 +61,10 @@
   - `python3 scripts/qa/check_demo_single.py "$PWD/preview/spindle-admin-demo.html" [--prove]`
 - **زمان اجرا:** هر اسکریپت ۱ تا ۵ دقیقه طول می‌کشد. هر کدام را در فرمان جدا اجرا کن، با سقف حدود ۳۰۰ ثانیه. `--prove` کامل دمو بیش از ۱۰ دقیقه است، پس با `--only` گروه‌گروه اجرا شود.
 - **کد خروج:** همهٔ اسکریپت‌ها روی خطا با کد ۱ خارج می‌شوند.
+- **بعد از هر دیپلوی:** همین اسکریپت‌ها روی سایت زنده هم اجرا می‌شوند. فایل‌های `dist/` با نسخهٔ منتشرشده بایت‌به‌بایت مقایسه شوند، و بعد:
+  - `check_admin_demo.py https://sedmehdi.com`
+  - `check_site.py https://sedmehdi.com LIVE`
+  - چند تکهٔ `audit.py https://sedmehdi.com`
 
 ## درس‌های اجرایی (هر کدام یک باگ واقعی بوده)
 - **ارتفاع درصدی در grid یا flex:** فقط وقتی کار می‌کند که track یا ارتفاع ظرف معین باشد. ردیف `auto` ارتفاع نامعین دارد.
@@ -77,6 +81,7 @@
 ## انتشار
 - **GitHub Pages:** push به `main` فایل `.github/workflows/deploy.yml` را اجرا می‌کند (Node 22) و `dist/` منتشر می‌شود.
 - **دامنه:** sedmehdi.com در Settings › Pages › Custom domain ست شده است. Actions فایل `public/CNAME` را نادیده می‌گیرد.
+- **اجازهٔ دیپلوی:** محیط `github-pages` (Settings › Environments) فقط به `main` اجازهٔ دیپلوی می‌دهد. اولین دیپلوی به همین دلیل شکست خورد، چون قانون محیط هنوز `baseline` بود.
 - **DNS در Porkbun:**
   - چهار رکورد A و چهار رکورد AAAA گیت‌هاب روی ریشه.
   - CNAME برای `www` به `boofkoor.github.io`.
