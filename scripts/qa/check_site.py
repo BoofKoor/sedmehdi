@@ -583,7 +583,9 @@ async def run(base, label):
             errs, ext = [], set()
             page.on('pageerror', lambda e: errs.append(str(e)))
             page.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
-            page.on('request', lambda r: ext.add(urlparse(r.url).netloc) if urlparse(r.url).hostname not in ('localhost', None) else None)
+            # another host is any host but the site's own: localhost when served for QA, sedmehdi.com when checking the live site
+            own = urlparse(base).hostname
+            page.on('request', lambda r: ext.add(urlparse(r.url).netloc) if urlparse(r.url).hostname not in (own, None) else None)
             for path in paths:
                 errs.clear()
                 await page.goto(base + path, wait_until='networkidle')
