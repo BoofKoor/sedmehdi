@@ -252,6 +252,9 @@ h1, h2, h3, h4 { margin: 0; }
 .facts dd.row { margin-top: calc(-1 * var(--space-1)); }
 /* hit area of 44px or more without moving the text: inline padding grows the target, not the line box */
 .facts a { display: inline-flex; align-items: center; min-height: 44px; padding-block: 0; }  /* 44px tall without padding that reached into the next row (hit areas overlapped by 12px) */
+/* That box puts the link's text in the middle of a 44px row, 12px under a label kept to the top: the label meets it there.
+   Desktop only: phones show the facts as tiles, the label above the value. */
+@media (min-width: 721px) { .facts dt:has(+ dd a) { align-self: center; } }
 
 /* technology chips: capsule, gray-button material without the drop shadow (tags never look clickable).
    Official icons use their brand colour, nudged per theme to stay at 3:1 or more against the chip. */

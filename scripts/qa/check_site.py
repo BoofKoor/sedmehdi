@@ -540,6 +540,34 @@ async def title_logo_check(browser, base):
         await ctx.close()
     return problems
 
+FACTS_ALIGN = r"""() => {
+  const line = el => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: n => n.data.trim() ? 1 : 3 });
+    const n = w.nextNode(); if (!n) return null; const r = document.createRange(); r.selectNodeContents(n); return r.getClientRects()[0] || null; };
+  return [...document.querySelectorAll('.facts dt')].filter(dt => dt.offsetParent && dt.nextElementSibling?.querySelector('a')).map(dt => {
+    const a = line(dt), b = line(dt.nextElementSibling);
+    return { label: dt.textContent.trim(), dy: a && b ? (b.top + b.height / 2) - (a.top + a.height / 2) : null }; }); }"""
+
+async def facts_align_check(browser, base):
+    """In the desktop facts list a linked value (Source, Live) sits level with its label, as every other value does. The
+    link is a 44px target (an inline-flex box with its text in the middle) and the label kept to the top of the row, so
+    the link's text sat 12px under its label on every case study, from 2560 to 721. Phones show facts as tiles, with the
+    label above the value, so they are not measured."""
+    problems = []
+    ctx = await browser.new_context(viewport={'width': 1440, 'height': 900}); pg = await ctx.new_page()
+    await pg.goto(base + '/projects/', wait_until='networkidle')
+    cases = sorted({await a.get_attribute('href') for a in await pg.query_selector_all('.fr-card')})
+    await ctx.close()
+    for vw in (2560, 1440, 1024, 768, 721):
+        ctx = await browser.new_context(viewport={'width': vw, 'height': 900}); pg = await ctx.new_page()
+        for path in cases:
+            await pg.goto(base + path); await pg.evaluate('document.fonts.ready')
+            rows = await pg.evaluate(FACTS_ALIGN)
+            if not rows: problems.append(f'facts align {vw}px {path}: no linked fact found to measure')
+            for r in rows:
+                if r['dy'] is None or abs(r['dy']) > 1: problems.append(f"facts align {vw}px {path} {r['label']}: the link's text is {r['dy']:+.1f}px off its label" if r['dy'] is not None else f"facts align {vw}px {path} {r['label']}: no text to measure")
+        await ctx.close()
+    return problems
+
 async def run(base, label):
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -548,7 +576,7 @@ async def run(base, label):
         await page.goto(base + '/projects/', wait_until='networkidle')
         paths = ['/', '/projects/'] + sorted({await a.get_attribute('href') for a in await page.query_selector_all('.fr-card')}) + ['/about/', '/resume/', '/contact/', '/404.html']
         await ctx.close()
-        fails = [f'{label}: {p}' for p in hex_shape(base)] + [f'{label} {p}' for p in await tokens_check(b, base)] + [f'{label} {p}' for p in await hero_check(b, base)] + [f'{label} {p}' for p in await grid_check(b, base)] + [f'{label} {p}' for p in await mobile_check(b, base)] + [f'{label} {p}' for p in await stack_check(b, base)] + [f'{label} {p}' for p in await order_check(b, base)] + [f'{label} {p}' for p in await carousel_focus_check(b, base)] + [f'{label} {p}' for p in await title_arrow_check(b, base)] + [f'{label} {p}' for p in await title_logo_check(b, base)] + [f'{label} {p}' for p in await card_fit_check(b, base)]
+        fails = [f'{label}: {p}' for p in hex_shape(base)] + [f'{label} {p}' for p in await tokens_check(b, base)] + [f'{label} {p}' for p in await hero_check(b, base)] + [f'{label} {p}' for p in await grid_check(b, base)] + [f'{label} {p}' for p in await mobile_check(b, base)] + [f'{label} {p}' for p in await stack_check(b, base)] + [f'{label} {p}' for p in await order_check(b, base)] + [f'{label} {p}' for p in await carousel_focus_check(b, base)] + [f'{label} {p}' for p in await title_arrow_check(b, base)] + [f'{label} {p}' for p in await title_logo_check(b, base)] + [f'{label} {p}' for p in await card_fit_check(b, base)] + [f'{label} {p}' for p in await facts_align_check(b, base)]
         for vw, vh in [(1440, 900), (390, 844), (320, 640)]:
             ctx = await b.new_context(viewport={'width': vw, 'height': vh})
             page = await ctx.new_page()
