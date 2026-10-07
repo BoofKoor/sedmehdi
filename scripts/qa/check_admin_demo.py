@@ -457,6 +457,13 @@ CARDS = r"""() => { const R = e => e.getBoundingClientRect();
 CASE_BUTTON = """() => { const a = document.querySelector('.case-lab a'); if (!a) return null; const r = a.getBoundingClientRect();
   return { w: r.width, h: r.height, href: a.getAttribute('href'), name: a.textContent.replace(/\\s+/g, ' ').trim() }; }"""
 
+async def _arrive(pg, path, timeout=8000):
+    """After a click that should navigate: wait until the address is `path` and the new page is idle. A click that does
+    not navigate leaves the old address, which the caller then reports."""
+    try: await pg.wait_for_url(lambda u: urlparse(u).path == path, wait_until='networkidle', timeout=timeout); await pg.wait_for_timeout(300)
+    except Exception: pass
+
+
 async def check_entry(browser, fault=None):
     problems = []
     kit = '/projects/spindle/'
@@ -475,14 +482,17 @@ async def check_entry(browser, fault=None):
         card = pg.locator(f'.work-phone .fr-card[href="{kit}"]' if phone else f'.work-desk .st-card[href="{kit}"]').first
         if await card.count():
             await card.evaluate("e => e.scrollIntoView({ block: 'center' })"); await pg.wait_for_timeout(300); box = await card.bounding_box()
-            await pg.mouse.click(box['x'] + 60, box['y'] + 60); await pg.wait_for_load_state('networkidle'); await pg.wait_for_timeout(300)
+            await pg.mouse.click(box['x'] + 60, box['y'] + 60)
+            # wait for the address, not the load state: the old page is already idle, so wait_for_load_state returned at
+            # once and the next evaluate could land mid-navigation ("Execution context was destroyed") on a slow answer
+            await _arrive(pg, kit)
             if await pg.evaluate('location.pathname') != kit: problems.append(f'Work {w}px: the kit card opened {await pg.evaluate("location.pathname")}')
         await pg.goto(BASE + kit, wait_until='networkidle')
         b = await pg.evaluate(CASE_BUTTON)
         if not b or min(b['w'], b['h']) < 44 or not (b['href'] or '').startswith('/lab/admin/') or not b['name'].startswith('Try the Live Demo'):
             problems.append(f'case study {w}px: demo button {b}')
         else:
-            await pg.click('.case-lab a'); await pg.wait_for_load_state('networkidle')
+            await pg.click('.case-lab a'); await _arrive(pg, '/lab/admin/')
             if not await pg.evaluate("location.pathname === '/lab/admin/' && !!document.querySelector('[data-page]')"): problems.append(f'case study {w}px: the button did not open the demo')
         await pg.goto(BASE + '/projects/gozarx/', wait_until='networkidle')
         g = await pg.evaluate("""() => ({ button: !!document.querySelector('.case-lab'), lab: [...document.querySelectorAll('a[href^="/lab/"]')].length,
