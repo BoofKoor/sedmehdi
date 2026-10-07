@@ -3,14 +3,23 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/admin-demo"
+  ],
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "dev:demo": "npm run dev --workspace admin-demo",
+    "build": "astro build && npm run build --workspace admin-demo",
     "preview": "astro preview",
-    "single-file": "astro build && node scripts/single-file.mjs"
+    "single-file": "astro build && node scripts/single-file.mjs",
+    "test:demo": "npm test --workspace admin-demo",
+    "demo:single": "npm run build --workspace admin-demo && node scripts/demo-single.mjs"
   },
   "dependencies": {
     "astro": "^7.3.5",
     "simple-icons": "^16.33.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

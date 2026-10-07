@@ -92,8 +92,9 @@ async def tokens_check(browser, base):
                 if not t[key]: problems.append(f'{mode}: {name} token missing'); continue
                 r = _cr(t[key], t['bg'])
                 if r < need: problems.append(f'{mode}: {name} {t[key]} on {t["bg"]} is {r:.2f}:1, needs {need}')
-            for name, key in [('live light', 'live'), ('in-progress light', 'progress')]:
-                if t[key] and _cr(t[key], t['bg2']) < 3.0: problems.append(f'{mode}: {name} {t[key]} on the hover surface {t["bg2"]} is {_cr(t[key], t["bg2"]):.2f}:1, needs 3')
+            for name, key, need in [('live light', 'live', 3.0), ('in-progress light', 'progress', 3.0), ('links', 'link', 4.5)]:
+                # the second surface carries text too: the phone fact tiles hold the GitHub and live links
+                if t[key] and _cr(t[key], t['bg2']) < need: problems.append(f'{mode}: {name} {t[key]} on the tile surface {t["bg2"]} is {_cr(t[key], t["bg2"]):.2f}:1, needs {need:g}')
             if _rgb(t['body']) != _rgb(t['bg']): problems.append(f'{mode}: body painted {t["body"]}, token says {t["bg"]}')
             if scheme == 'dark':
                 want = '#121212' if contrast == 'no-preference' else '#000000'
@@ -123,8 +124,11 @@ def hex_shape(base):
 
 
 
+KNOWN_STATES = {'in production': 'live', 'live demo': 'live', 'in development': 'building'}
 def _state(status):
-    return 'live' if re.search(r'production|live', status, re.I) else 'building' if re.search(r'development|beta|progress|building', status, re.I) else 'steady'
+    """src/data/status.ts, mirrored: known statuses by name, then whole-word patterns."""
+    if status.strip().lower() in KNOWN_STATES: return KNOWN_STATES[status.strip().lower()]
+    return 'live' if re.search(r'\b(production|live)\b', status, re.I) else 'building' if re.search(r'\b(development|beta|progress|building)\b', status, re.I) else 'steady'
 
 HERO = r"""() => { const svg = document.querySelector('.hero-visual .hub'), h1 = document.querySelector('.hero h1');
   const a = svg && svg.getBoundingClientRect(), b = h1 && h1.getBoundingClientRect();
@@ -247,7 +251,7 @@ MOB = r"""() => { const q = s => document.querySelector(s), R = el => el.getBoun
            page: getComputedStyle(document.documentElement).getPropertyValue('--color-background').trim(), metas: [...document.querySelectorAll('meta[name="theme-color"]')].map(m => m.content),
            overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, back: shown(q('.back-btn')) ? q('.back-btn').getAttribute('href') : null,
            lockup: shown(q('.lockup')), rv: document.querySelectorAll('.rv').length }; }"""
-EXPECT_TAB = {'/': 'Home', '/projects/': 'Work', '/projects/gozarx/': 'Work', '/about/': 'About', '/resume/': 'Résumé', '/contact/': 'Contact'}
+EXPECT_TAB = {'/': 'Home', '/projects/': 'Work', '/projects/gozarx/': 'Work', '/projects/spindle/': 'Work', '/about/': 'About', '/resume/': 'Résumé', '/contact/': 'Contact'}
 async def mobile_check(browser, base):
     """The phone experience (390x844, touch), both themes: a slim bar (60px or less) without the section links; a floating
     tab bar of five 44px+ tabs, the current section marked, labels 11px+ at 4.5:1 on the bar; nothing hidden under the
@@ -314,7 +318,7 @@ async def mobile_check(browser, base):
                 await pg.wait_for_timeout(800)
                 st = await pg.evaluate("[[...document.querySelectorAll('.dots .dot')].findIndex(d => d.classList.contains('on')), [...document.querySelectorAll('.framed.carousel .fr-card')].findIndex(c => c.classList.contains('is-inview'))]")
                 if st != [1, 1]: problems.append(f'mobile carousel: after a swipe to card 2 the dot/raised card are {st}')
-            for src, nxt in [('/projects/gozarx/', '/projects/tooti/'), ('/projects/jozveyar/', '/projects/gozarx/')]:
+            for src, nxt in [('/projects/gozarx/', '/projects/spindle/'), ('/projects/spindle/', '/projects/tooti/'), ('/projects/jozveyar/', '/projects/gozarx/')]:
                 await pg.goto(base + src); await pg.wait_for_timeout(400)
                 f = await pg.evaluate("""(() => { const tops = [...document.querySelectorAll('.fact')].map(e => Math.round(e.getBoundingClientRect().top)), chips = document.querySelector('.fact.wide .chips'), n = document.querySelector('.next-card');
                     const ct = chips ? [...chips.children].map(c => Math.round(c.getBoundingClientRect().top)) : [];
@@ -417,6 +421,153 @@ async def stack_check(browser, base):
     await ctx.close()
     return problems
 
+ORDER = ['/projects/gozarx/', '/projects/spindle/', '/projects/tooti/', '/projects/jozveyar/']
+async def order_check(browser, base):
+    """The four projects in their order everywhere they are listed: the desktop stack on Home and Work numbered 01 / 04
+    to 04 / 04, the phone carousel with four dots, the phone list, and the next-project card of every case study
+    leading to the next one by order, round to the first."""
+    problems = []
+    for path in ['/', '/projects/']:
+        ctx = await browser.new_context(viewport={'width': 1440, 'height': 900}); pg = await ctx.new_page(); await pg.goto(base + path)
+        st = await pg.evaluate("[...document.querySelectorAll('.work-desk .st-card')].map(c => [c.getAttribute('href'), c.querySelector('.st-num').textContent.replace(/\\s+/g, ' ').trim()])")
+        if [h for h, _ in st] != ORDER: problems.append(f'order {path} desktop: cards {[h for h, _ in st]}')
+        want = [f'{i:02d} / {len(ORDER):02d}' for i in range(1, len(ORDER) + 1)]
+        if [n for _, n in st] != want: problems.append(f'order {path} desktop: numbers {[n for _, n in st]}, expected {want}')
+        await ctx.close()
+        ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True); pg = await ctx.new_page(); await pg.goto(base + path)
+        ph = await pg.evaluate("[[...document.querySelectorAll('.work-phone .fr-card')].map(c => c.getAttribute('href')), document.querySelectorAll('.work-phone .dots .dot').length]")
+        if ph[0] != ORDER: problems.append(f'order {path} phone: cards {ph[0]}')
+        if path == '/' and ph[1] != len(ORDER): problems.append(f'order {path} phone: {ph[1]} carousel dots for {len(ORDER)} cards')
+        await ctx.close()
+    ctx = await browser.new_context(viewport={'width': 1440, 'height': 900}); pg = await ctx.new_page()
+    for i, src in enumerate(ORDER):
+        await pg.goto(base + src); nxt = await pg.evaluate("(() => { const n = document.querySelector('.next-card'); return n && n.getAttribute('href'); })()")
+        if nxt != ORDER[(i + 1) % len(ORDER)]: problems.append(f'order {src}: next project {nxt}, expected {ORDER[(i + 1) % len(ORDER)]}')
+    await ctx.close()
+    return problems
+
+CAROUSEL_FOCUS = r"""() => { const a = document.activeElement, c = a && a.closest('.framed.carousel .fr-card'); if (!c) return null; const r = c.getBoundingClientRect();
+  let seen = 0; for (const fx of [.05, .5, .95]) for (const fy of [.1, .5, .9]) { const x = r.left + r.width * fx, y = r.top + r.height * fy;
+    if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue; const t = document.elementFromPoint(x, y); if (t && (t === c || c.contains(t))) seen++; }
+  const cards = [...document.querySelectorAll('.framed.carousel .fr-card')], dots = [...document.querySelectorAll('.dots .dot')];
+  return { i: cards.indexOf(c), seen, dot: dots.findIndex(d => d.classList.contains('on')) }; }"""
+async def carousel_focus_check(browser, base):
+    """Keyboard in the Home carousel (phones, 320 to 720): Tab onto each card brings the whole card on screen, all 9
+    points of a 3x3 grid by elementFromPoint, and its dot follows. A card left mostly off screen kept its focus ring
+    there too, so a keyboard user could not see where they were."""
+    problems = []
+    for vw in (720, 390, 360, 320):
+        for motion in ('no-preference', 'reduce'):
+            ctx = await browser.new_context(viewport={'width': vw, 'height': 844}, is_mobile=True, has_touch=True, reduced_motion=motion); pg = await ctx.new_page()
+            await pg.goto(base + '/'); await pg.wait_for_timeout(400); seen = {}
+            for _ in range(40):
+                await pg.keyboard.press('Tab')
+                if not await pg.evaluate("!!(document.activeElement && document.activeElement.closest('.framed.carousel .fr-card'))"):
+                    if seen: break
+                    continue
+                await pg.wait_for_timeout(800)  # a smooth scroll has landed by now
+                f = await pg.evaluate(CAROUSEL_FOCUS); seen[f['i']] = f
+            n = await pg.evaluate("document.querySelectorAll('.framed.carousel .fr-card').length")
+            for i in range(n):
+                f = seen.get(i); tag = f'carousel focus {vw}px{" reduce" if motion == "reduce" else ""} card {i + 1}'
+                if not f: problems.append(f'{tag}: never focused'); continue
+                if f['seen'] < 9: problems.append(f'{tag}: {f["seen"]}/9 points on screen when focused')
+                if f['dot'] != i: problems.append(f'{tag}: dot {f["dot"] + 1} marked')
+            await ctx.close()
+    return problems
+
+TITLE_ARROW = r"""() => [...document.querySelectorAll('.st-title, .fr-title, .next-title')].filter(t => t.getClientRects().length && t.querySelector('.go')).map(t => {
+  const go = t.querySelector('.go').getBoundingClientRect(), r = document.createRange(), rects = [];
+  const walk = document.createTreeWalker(t, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement.closest('.vh, .go') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  for (let n; (n = walk.nextNode());) { r.selectNodeContents(n); rects.push(...[...r.getClientRects()].filter(x => x.width > 0)); }
+  const lines = [...new Set(rects.map(x => Math.round(x.top)))].sort((a, b) => a - b), last = rects.filter(x => Math.round(x.top) === lines[lines.length - 1]);
+  const card = t.closest('a'), end = Math.max(...last.map(x => x.right)), mid = (last[0].top + last[0].bottom) / 2;
+  return { title: card.getAttribute('href'), kind: t.classList[0], lines: lines.length, gap: Math.round(go.left - end), dy: Math.round((go.top + go.bottom) / 2 - mid) };
+})"""
+async def title_arrow_check(browser, base):
+    """Every project title's arrow follows the title's last word, on that word's line: a long title ("Spindle Admin Kit")
+    wrapped inside a flex row left the arrow at the far end of the row, up to 270px past the text and halfway up the
+    block, pointing at nothing. Desk stack, phone cards and the next-project card, from 2560 to 320."""
+    problems = []
+    for vw in (2560, 1440, 1024, 768, 721, 720, 390, 360, 320):
+        ctx = await browser.new_context(viewport={'width': vw, 'height': 900}, is_mobile=vw < 721, has_touch=vw < 721, reduced_motion='reduce'); pg = await ctx.new_page()
+        for path in ['/', '/projects/'] + ORDER:
+            await pg.goto(base + path); await pg.evaluate('document.fonts.ready')
+            for x in await pg.evaluate(TITLE_ARROW):
+                if not (0 <= x['gap'] <= 24) or abs(x['dy']) > 6:
+                    problems.append(f"title arrow {vw}px {path} {x['kind']} {x['title']}: {x['gap']}px after the last line, {x['dy']:+d}px off its middle ({x['lines']} lines)")
+        await ctx.close()
+    return problems
+
+CARD_FIT = r"""() => [...document.querySelectorAll('.work-desk .st-card, .work-phone .fr-card')].filter(c => c.getClientRects().length).map(c => {
+  const box = c.getBoundingClientRect(), text = [...c.querySelectorAll('.st-text *, .fr-text *')].filter(e => e.getClientRects().length && !e.closest('.vh'));
+  return { card: c.getAttribute('href'), kind: c.classList[0], h: Math.round(box.height), room: Math.round(box.bottom - Math.max(...text.map(e => e.getBoundingClientRect().bottom))) };
+})"""
+async def card_fit_check(browser, base):
+    """Every project card holds all of its text: the cards clip (overflow hidden), and a desk stack card is as tall as
+    the viewport allows, so on a landscape phone (844x390) it was 174px for text that needs 450, and at 721px wide the
+    Spindle card's second row of chips ran 30px off its edge. Viewports from a 2560 desk to a 375-tall landscape phone."""
+    problems = []
+    for vw, vh in ((2560, 1440), (1440, 900), (1440, 560), (1366, 650), (1280, 600), (1024, 768), (1024, 600), (900, 640), (768, 1024), (768, 900),
+                   (768, 720), (721, 900), (721, 640), (932, 430), (844, 390), (812, 375), (720, 900), (667, 375), (390, 844), (320, 640)):
+        phone = vh < 500 or vw < 721
+        ctx = await browser.new_context(viewport={'width': vw, 'height': vh}, is_mobile=phone, has_touch=phone, reduced_motion='reduce'); pg = await ctx.new_page()
+        for path in ['/', '/projects/']:
+            await pg.goto(base + path); await pg.evaluate('document.fonts.ready')
+            for x in await pg.evaluate(CARD_FIT):
+                if x['room'] < 0: problems.append(f"card fit {vw}x{vh} {path} {x['kind']} {x['card']}: text runs {-x['room']}px past the card's {x['h']}px")
+        await ctx.close()
+    return problems
+
+TITLE_LOGO = r"""() => [...document.querySelectorAll('.st-card, .fr-card')].filter(c => c.getClientRects().length && c.querySelector('.pj-logo')).map(c => {
+  const t = c.querySelector('.st-title, .fr-title'), logo = c.querySelector('.pj-logo').getBoundingClientRect(), r = document.createRange(), rects = [];
+  const walk = document.createTreeWalker(t, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement.closest('.vh, .go') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  for (let n; (n = walk.nextNode());) { r.selectNodeContents(n); rects.push(...[...r.getClientRects()].filter(x => x.width > 0)); }
+  const top = Math.min(...rects.map(x => x.top)), bottom = Math.max(...rects.map(x => x.bottom));
+  return { card: c.getAttribute('href'), kind: c.classList[0], lines: new Set(rects.map(x => Math.round(x.top))).size, dy: (top + bottom) / 2 - (logo.top + logo.bottom) / 2 };
+})"""
+async def title_logo_check(browser, base):
+    """A one-line project title sits on its logo tile's middle, as it did when the title was a centred flex row: made
+    plain text for its arrow (title_arrow_check), it rose to the top of the tile's row, 9px high at 1440 and 17.5px at
+    768. Desk stack and phone cards, from 2560 to 320."""
+    problems = []
+    for vw in (2560, 1440, 1024, 768, 721, 720, 390, 320):
+        ctx = await browser.new_context(viewport={'width': vw, 'height': 900}, is_mobile=vw < 721, has_touch=vw < 721, reduced_motion='reduce'); pg = await ctx.new_page()
+        for path in ['/', '/projects/']:
+            await pg.goto(base + path); await pg.evaluate('document.fonts.ready')
+            for x in await pg.evaluate(TITLE_LOGO):
+                if x['lines'] == 1 and abs(x['dy']) > 2: problems.append(f"title logo {vw}px {path} {x['kind']} {x['card']}: the title is {x['dy']:+.1f}px off its logo's middle")
+        await ctx.close()
+    return problems
+
+FACTS_ALIGN = r"""() => {
+  const line = el => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: n => n.data.trim() ? 1 : 3 });
+    const n = w.nextNode(); if (!n) return null; const r = document.createRange(); r.selectNodeContents(n); return r.getClientRects()[0] || null; };
+  return [...document.querySelectorAll('.facts dt')].filter(dt => dt.offsetParent && dt.nextElementSibling?.querySelector('a')).map(dt => {
+    const a = line(dt), b = line(dt.nextElementSibling);
+    return { label: dt.textContent.trim(), dy: a && b ? (b.top + b.height / 2) - (a.top + a.height / 2) : null }; }); }"""
+
+async def facts_align_check(browser, base):
+    """In the desktop facts list a linked value (Source, Live) sits level with its label, as every other value does. The
+    link is a 44px target (an inline-flex box with its text in the middle) and the label kept to the top of the row, so
+    the link's text sat 12px under its label on every case study, from 2560 to 721. Phones show facts as tiles, with the
+    label above the value, so they are not measured."""
+    problems = []
+    ctx = await browser.new_context(viewport={'width': 1440, 'height': 900}); pg = await ctx.new_page()
+    await pg.goto(base + '/projects/', wait_until='networkidle')
+    cases = sorted({await a.get_attribute('href') for a in await pg.query_selector_all('.fr-card')})
+    await ctx.close()
+    for vw in (2560, 1440, 1024, 768, 721):
+        ctx = await browser.new_context(viewport={'width': vw, 'height': 900}); pg = await ctx.new_page()
+        for path in cases:
+            await pg.goto(base + path); await pg.evaluate('document.fonts.ready')
+            rows = await pg.evaluate(FACTS_ALIGN)
+            if not rows: problems.append(f'facts align {vw}px {path}: no linked fact found to measure')
+            for r in rows:
+                if r['dy'] is None or abs(r['dy']) > 1: problems.append(f"facts align {vw}px {path} {r['label']}: the link's text is {r['dy']:+.1f}px off its label" if r['dy'] is not None else f"facts align {vw}px {path} {r['label']}: no text to measure")
+        await ctx.close()
+    return problems
+
 async def run(base, label):
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -425,7 +576,7 @@ async def run(base, label):
         await page.goto(base + '/projects/', wait_until='networkidle')
         paths = ['/', '/projects/'] + sorted({await a.get_attribute('href') for a in await page.query_selector_all('.fr-card')}) + ['/about/', '/resume/', '/contact/', '/404.html']
         await ctx.close()
-        fails = [f'{label}: {p}' for p in hex_shape(base)] + [f'{label} {p}' for p in await tokens_check(b, base)] + [f'{label} {p}' for p in await hero_check(b, base)] + [f'{label} {p}' for p in await grid_check(b, base)] + [f'{label} {p}' for p in await mobile_check(b, base)] + [f'{label} {p}' for p in await stack_check(b, base)]
+        fails = [f'{label}: {p}' for p in hex_shape(base)] + [f'{label} {p}' for p in await tokens_check(b, base)] + [f'{label} {p}' for p in await hero_check(b, base)] + [f'{label} {p}' for p in await grid_check(b, base)] + [f'{label} {p}' for p in await mobile_check(b, base)] + [f'{label} {p}' for p in await stack_check(b, base)] + [f'{label} {p}' for p in await order_check(b, base)] + [f'{label} {p}' for p in await carousel_focus_check(b, base)] + [f'{label} {p}' for p in await title_arrow_check(b, base)] + [f'{label} {p}' for p in await title_logo_check(b, base)] + [f'{label} {p}' for p in await card_fit_check(b, base)] + [f'{label} {p}' for p in await facts_align_check(b, base)]
         for vw, vh in [(1440, 900), (390, 844), (320, 640)]:
             ctx = await b.new_context(viewport={'width': vw, 'height': vh})
             page = await ctx.new_page()
@@ -474,5 +625,7 @@ async def run(base, label):
             key = f.split(': ', 1)[-1][:48]  # any message, with or without a colon
             if key in seen: continue
             seen.add(key); print('  FAIL', f)
+        return len(fails)
 
-asyncio.run(run(sys.argv[1], sys.argv[2]))
+# The exit status says what the report says, so a script or CI that runs this sees a failure (it exited 0 on any count).
+sys.exit(1 if asyncio.run(run(sys.argv[1], sys.argv[2])) else 0)

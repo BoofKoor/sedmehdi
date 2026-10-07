@@ -4,7 +4,7 @@ router, so this is the router's job; v0.11 left Home marked everywhere and had n
 import asyncio, sys
 from playwright.async_api import async_playwright
 FILE = sys.argv[1]
-EXPECT = [('#/', 'Home', False), ('#/projects/', 'Work', False), ('#/projects/gozarx/', 'Work', True), ('#/about/', 'About', False), ('#/resume/', 'Résumé', False), ('#/contact/', 'Contact', False)]
+EXPECT = [('#/', 'Home', False), ('#/projects/', 'Work', False), ('#/projects/gozarx/', 'Work', True), ('#/projects/spindle/', 'Work', True), ('#/about/', 'About', False), ('#/resume/', 'Résumé', False), ('#/contact/', 'Contact', False)]
 async def main():
     fails = []
     async with async_playwright() as p:

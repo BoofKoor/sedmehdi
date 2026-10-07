@@ -16,7 +16,7 @@ const ALIASES = {
 // terms with no brand icon get one of ours, by kind
 const KINDS = {
   aiogram: 'framework', remnawave: 'api', 'remnawave api': 'api', 'rest api': 'api', api: 'api', websockets: 'api',
-  monitoring: 'pulse', cron: 'terminal', 'reverse proxy': 'server',
+  monitoring: 'pulse', cron: 'terminal', 'reverse proxy': 'server', 'hand-made svg charts': 'chart',
 };
 
 // original line icons on the monogram's 2:1 isometric grid (24x24, stroked)
@@ -30,6 +30,7 @@ export const OWN = {
   server: '<rect x="4" y="4.5" width="16" height="6" rx="1.5"/><rect x="4" y="13.5" width="16" height="6" rx="1.5"/><path d="M7.5 7.5h.01M7.5 16.5h.01M11 7.5h5.5M11 16.5h5.5"/>',
   terminal: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9.5l3 2-3 2M12.5 15h4"/>',
   pulse: '<path d="M3 12h4.5l2-5 4 10 2-5H21"/>',
+  chart: '<path d="M4 4.5v15h16"/><path d="M7.5 15.5l4-5 3 2.5 5-6"/>',
 };
 OWN.code = OWN.language;
 

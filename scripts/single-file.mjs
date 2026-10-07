@@ -21,8 +21,12 @@ const attr = (s) => s.replace(/"/g, '&quot;');
 const inlineScripts = (html) => [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>[\s\S]*?<\/script>/g)].map((m) => m[0]);
 
 // 1. every page: route, title, description and the contents of <main>
+// dist/lab/ holds the live demos (the admin panel at /lab/admin/): self-contained apps with their own
+// HTML, not pages of this shell. They are left out of the preview, and links to them point at the
+// published site instead (step 2), since a single offline file cannot carry a second app.
 const walk = (dir) => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? walk(p) : [p]; });
-const pages = walk(dist).filter((p) => p.endsWith('.html')).map((abs) => {
+const isLab = (abs) => relative(dist, abs).split(sep)[0] === 'lab';
+const pages = walk(dist).filter((p) => p.endsWith('.html') && !isLab(p)).map((abs) => {
   const rel = relative(dist, abs).split(sep).join('/');
   const html = readFileSync(abs, 'utf8');
   return {
@@ -38,11 +42,14 @@ const home = must(pages.find((p) => p.route === '/'), 'the home page', 'dist/');
 const head = must(home.html.match(/<head>([\s\S]*?)<\/head>/), '<head>', 'index.html')[1];
 const body = must(home.html.match(/<body>([\s\S]*?)<\/body>/), '<body>', 'index.html')[1];
 
-// 2. internal links become hash routes; the résumé PDF is inlined; everything else stays as it is
+// 2. internal links become hash routes; the résumé PDF is inlined; links into /lab/ go to the published
+// site (its origin is the home page's canonical URL); everything else stays as it is
+const origin = new URL(must(head.match(/<link rel="canonical" href="([^"]+)"/), 'canonical link', 'index.html')[1]).origin;
 const relink = (html) => html.replace(/src="(\/[^"#]*\.(?:webp|png|jpe?g|svg))"/gi, (whole, path) => `src="${dataUri(path)}"`).replace(/href="(\/[^"#]*)"/g, (whole, path) => {
   if (routes.has(path)) return `href="#${path}"`;
   if (routes.has(path + '/')) return `href="#${path}/"`;
   if (path.endsWith('.pdf')) return `href="${dataUri(path)}"`;
+  if (path.startsWith('/lab/')) return `href="${origin}${path}"`;
   return whole;
 });
 

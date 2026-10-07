@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-profile="hosting" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Spindle Admin Kit, live demo · sed.mehdi</title>
+    <meta
+      name="description"
+      content="Spindle Admin Kit: a live, white-label admin dashboard with synthetic data, for five businesses, in two themes, English and Persian."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="preload" href="./fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      // Before the first frame: the business, the language (and its direction) and the theme, so
+      // nothing flashes or jumps sideways when the app mounts. The same precedence as src/state:
+      // the URL, then the saved choice, then the default. The theme key is the portfolio's own
+      // (`sm-theme`), so the site and the demo are one theme; `?theme=` applies without saving.
+      (function () {
+        var d = document.documentElement, q = new URLSearchParams(location.search);
+        // The businesses, and old ids mapped to the one that replaced them (src/profiles/brands.ts).
+        var ids = ["hosting", "saas", "ecommerce", "education", "print"], legacy = { vpn: "hosting" };
+        function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+        function known(v) { return legacy.hasOwnProperty(v) ? legacy[v] : ids.indexOf(v) < 0 ? null : v; }
+        var p = known(q.get("profile")) || known(get("sm-admin-profile")) || "hosting";
+        var l = q.get("lang"); if (l !== "fa" && l !== "en") l = get("sm-admin-lang"); if (l !== "fa" && l !== "en") l = "en";
+        var t = q.get("theme"); if (t !== "light" && t !== "dark") t = get("sm-theme");
+        if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        d.setAttribute("data-profile", p); d.setAttribute("data-theme", t); d.lang = l; d.dir = l === "fa" ? "rtl" : "ltr";
+        // Persian text is drawn in Vazirmatn: fetch it with the page rather than after the first
+        // paint, so the text does not reflow when it lands.
+        if (l === "fa") ["Regular", "Bold"].forEach(function (w) {
+          var k = document.createElement("link"); k.rel = "preload"; k.as = "font"; k.type = "font/woff2"; k.crossOrigin = "";
+          k.href = "./fonts/Vazirmatn-" + w + ".woff2"; document.head.appendChild(k);
+        });
+      })();
+    </script>
+    <style>
+      /* Self-hosted: DM Sans (latin, the portfolio's face) and Vazirmatn for Persian only (its
+         unicode-range keeps English visits from downloading it). SIL OFL 1.1, see fonts/OFL-*.txt. */
+      @font-face {
+        font-family: "DM Sans"; font-style: normal; font-weight: 100 1000; font-display: swap;
+        src: url("./fonts/dm-sans-latin.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-family: "Vazirmatn"; font-style: normal; font-weight: 400; font-display: swap;
+        src: url("./fonts/Vazirmatn-Regular.woff2") format("woff2");
+        unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF;
+      }
+      @font-face {
+        font-family: "Vazirmatn"; font-style: normal; font-weight: 500 600; font-display: swap;
+        src: url("./fonts/Vazirmatn-Medium.woff2") format("woff2");
+        unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF;
+      }
+      @font-face {
+        font-family: "Vazirmatn"; font-style: normal; font-weight: 700 800; font-display: swap;
+        src: url("./fonts/Vazirmatn-Bold.woff2") format("woff2");
+        unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="demo-skip" id="skip-link" href="#main"><span data-l="en">Skip to content</span><span data-l="fa">پرش به محتوا</span></a>
+    <!-- The portfolio's frame around the demo: always on, in the page's language, before any
+         script runs. The Demo button gets its menu from the app once it mounts. -->
+    <div class="demo-banner" id="demo-banner">
+      <a class="demo-home" href="/">
+        <svg class="demo-mark" viewBox="0 0 604 1000" aria-hidden="true" focusable="false"><path d="M302.00,0.00L604.00,151.00L604.00,259.45L302.00,108.45L97.00,210.95L97.00,270.92L410.45,427.65L302.00,481.87L0.00,330.87L0.00,259.45L0.00,222.42L0.00,151.00ZM604.00,337.71L604.00,409.14L604.00,446.16L604.00,517.58L604.00,849.00L507.00,897.50L507.00,566.08L350.50,644.33L350.50,975.75L302.00,1000.00L253.50,975.75L253.50,644.33L97.00,566.08L97.00,897.50L0.00,849.00L0.00,517.58L0.00,409.14L302.00,560.14L507.00,457.64L507.00,397.66L193.55,240.94L302.00,186.71Z" /></svg>
+        <span class="demo-wm" dir="ltr">sed<span class="demo-wm-dot">.</span>mehdi</span>
+        <span class="sr-only"><span data-l="en">, home</span><span data-l="fa">، صفحهٔ اصلی</span></span>
+      </a>
+      <p class="demo-note">
+        <span class="demo-dot" aria-hidden="true"></span>
+        <span data-l="en">Live demo · synthetic data</span><span data-l="fa">دموی زنده · دادهٔ ساختگی</span>
+      </p>
+      <div class="demo-links">
+        <button class="demo-menu-btn" id="demo-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span data-l="en">Demo</span><span data-l="fa">دمو</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+        <a class="demo-case" href="/projects/spindle/"><span data-l="en">Spindle case study</span><span data-l="fa">کیس‌استادی Spindle</span></a>
+      </div>
+    </div>
+    <div id="root"></div>
+    <noscript>
+      <p class="demo-noscript">This demo is an interactive app and needs JavaScript. The data is synthetic and nothing leaves your browser.</p>
+    </noscript>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>

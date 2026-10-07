@@ -12,7 +12,7 @@ device: "phone"
 accent: "#09564F"   # a deeper tone of the brand teal #0fa294 (its ink #0a7268 gave the summary 4.20:1); white 8.55:1, amber light 4.16:1
 logo: { src: "/projects/logos/tooti.svg", bg: "#F2FBF8", tint: "#1BB6A7" }   # from the project repo; tint sampled from the logo
 featured: true
-order: 2
+order: 3
 ---
 
 ## The idea

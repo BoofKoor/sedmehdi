@@ -1,0 +1,326 @@
+@import "./theme/palettes.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Elevation per theme: dark surfaces lift with light, not with shadow. */
+:root {
+  --shadow-card: 0 1px 2px rgb(16 18 40 / 0.05), 0 4px 12px -8px rgb(16 18 40 / 0.12);
+  --shadow-raised: 0 4px 14px -4px rgb(16 18 40 / 0.14), 0 2px 6px -3px rgb(16 18 40 / 0.08);
+  --shadow-overlay: 0 32px 64px -28px rgb(16 18 40 / 0.42), 0 10px 24px -12px rgb(16 18 40 / 0.2);
+  --shadow-hero: 0 10px 26px -14px rgb(var(--hero-b) / 0.75);
+  --banner-h: 40px;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --shadow-card: none;
+  --shadow-raised: 0 12px 30px -20px rgb(0 0 0 / 0.7);
+  --shadow-overlay: 0 32px 64px -28px rgb(0 0 0 / 0.85);
+  color-scheme: dark;
+}
+@media (max-width: 720px) {
+  :root { --banner-h: 44px; }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Below md the header sticks to the top and the tab bar floats over the bottom: focus and anchor
+     scrolling stop clear of both. Without it a focused chart sat a third under the tab bar. */
+  @media (max-width: 767.98px) {
+    html {
+      scroll-padding-top: 4.5rem;
+      scroll-padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+  body {
+    @apply bg-canvas font-sans text-content antialiased;
+    margin: 0;
+  }
+  /* One visible focus affordance everywhere: a solid 2px ring in the business's ring colour,
+     which clears 3:1 on every surface it lands on (src/theme/palette.test.ts). */
+  :focus-visible {
+    outline: 2px solid rgb(var(--ring));
+    outline-offset: 2px;
+  }
+  /* Digits line up only where numbers form a column (tables, axis ticks); big figures keep the
+     font's own proportional digits. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Only the active language's copy of a static string is rendered (the banner is HTML that has
+     to be right before any script runs). */
+  [data-l="fa"] {
+    display: none;
+  }
+  :root[lang="fa"] [data-l="en"] {
+    display: none;
+  }
+  :root[lang="fa"] [data-l="fa"] {
+    display: inline;
+  }
+
+  /* The one input surface: every text field and select composes this. */
+  .field-control {
+    @apply w-full rounded-xl border border-line-control bg-surface px-3 py-2 text-sm text-content transition placeholder:text-content-subtle disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .field-control:focus {
+    outline: 2px solid rgb(var(--ring));
+    outline-offset: 1px;
+  }
+
+  /* The first stop on the page, visible only when it has focus. */
+  .demo-skip {
+    position: absolute;
+    inset-inline-start: 12px;
+    top: -60px;
+    z-index: 80;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: rgb(var(--btn-primary));
+    color: rgb(var(--btn-primary-ink));
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .demo-skip:focus {
+    top: 8px;
+  }
+
+  /* ---------------------------------------------------------------- the portfolio's banner
+     Neutral, in the portfolio's own colours (not the business palette): it is the site around
+     the demo, not part of the demo's product. */
+  .demo-banner {
+    --b-bg: #ffffff;
+    --b-ink: #000000;
+    --b-sub: #5e5e5e;
+    --b-line: #e2e2e2;
+    --b-link: #d33f41;
+    --b-tint: #ea5555;
+    position: relative;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: var(--banner-h);
+    padding: 0 12px;
+    background: var(--b-bg);
+    color: var(--b-ink);
+    border-bottom: 1px solid var(--b-line);
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  :root[data-theme="dark"] .demo-banner {
+    --b-bg: #121212;
+    --b-ink: #ffffff;
+    --b-sub: #a3a3a3;
+    --b-line: #303030;
+    --b-link: #ea5555;
+  }
+  .demo-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 0 6px;
+    margin-inline-start: -6px;
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .demo-mark {
+    height: 20px;
+    width: auto;
+    fill: currentColor;
+  }
+  .demo-wm {
+    font-weight: 300;
+    letter-spacing: 0.32em;
+    font-size: 13px;
+  }
+  .demo-wm-dot {
+    color: var(--b-tint);
+  }
+  .demo-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    color: var(--b-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .demo-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex: none;
+    background: #1e9a4a;
+    box-shadow: 0 0 0 3px rgb(30 154 74 / 0.18);
+  }
+  :root[data-theme="dark"] .demo-dot {
+    background: #30d158;
+    box-shadow: 0 0 0 3px rgb(48 209 88 / 0.2);
+  }
+  .demo-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-start: auto;
+  }
+  .demo-menu-btn,
+  .demo-case {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    color: var(--b-link);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .demo-menu-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .demo-menu-btn:hover,
+  .demo-case:hover,
+  .demo-home:hover {
+    background: color-mix(in srgb, var(--b-ink) 6%, transparent);
+  }
+  .demo-banner :focus-visible {
+    outline: 2px solid var(--b-link);
+    outline-offset: 1px;
+  }
+  /* Phones: the case study moves into the Demo menu, so "synthetic data" is never cut short. */
+  @media (max-width: 720px) {
+    .demo-banner {
+      gap: 6px;
+      padding: 0 8px;
+    }
+    .demo-home,
+    .demo-menu-btn {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .demo-wm,
+    .demo-case {
+      display: none;
+    }
+  }
+  @media (max-width: 360px) {
+    .demo-note {
+      font-size: 12px;
+    }
+  }
+  .demo-noscript {
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+}
+
+@layer components {
+  /* The phone's bottom bar: the portfolio's frosted-glass tab bar, in the business's tokens. Where
+     backdrop blur is missing the glass turns nearly opaque, so icons never sit on page text. */
+  .bottom-pill {
+    background: rgb(var(--surface) / 0.8);
+    border: 1px solid rgb(var(--line) / 0.9);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 18px 40px -18px rgb(0 0 0 / 0.38);
+    -webkit-backdrop-filter: blur(22px) saturate(1.8);
+    backdrop-filter: blur(22px) saturate(1.8);
+  }
+  :root[data-theme="dark"] .bottom-pill {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 18px 40px -18px rgb(0 0 0 / 0.7);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .bottom-pill {
+      background: rgb(var(--surface) / 0.97);
+    }
+  }
+
+  /* Chart entry: the plot wipes in from its oldest day (the start edge), bars grow from their
+     baseline. Both are CSS, so Reduce Motion (below) turns them off with everything else. */
+  .chart-wipe {
+    animation: chart-wipe 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes chart-wipe {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  .bar-grow {
+    transform-origin: left center;
+    animation: bar-grow 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  [dir="rtl"] .bar-grow {
+    transform-origin: right center;
+  }
+  @keyframes bar-grow {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--line-strong)) transparent;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  /* Reduce Motion: no CSS animation or transition anywhere in the demo. The JavaScript-driven
+     motion (count-ups, chart tweens, the live ticker) reads the same query in useReducedMotion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

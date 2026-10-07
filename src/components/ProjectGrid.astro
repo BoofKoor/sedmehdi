@@ -5,17 +5,19 @@
 import type { CollectionEntry } from 'astro:content';
 import Arrow from './Arrow.astro';
 import { statusState } from '../data/status';
+import { demoLabel } from '../data/links';
+import { lastWord } from '../data/title';
 interface Props { projects: CollectionEntry<'projects'>[]; carousel?: boolean }
 const { projects, carousel = false } = Astro.props;
-const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? new URL(p.data.demo).hostname : p.id);
+const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? demoLabel(p.data.demo, Astro.site) : p.id);
 ---
 <div class={carousel ? 'framed carousel' : 'framed'}>
-  {projects.map((project, i) => { const p = project.data, id = project.id, lead = i === 0; return (
+  {projects.map((project, i) => { const p = project.data, id = project.id, lead = i === 0, [head, last] = lastWord(p.title); return (
     <a class={lead ? 'fr-card fr-lead' : 'fr-card'} href={`/projects/${id}/`} data-device={p.device} style={`${p.accent ? `--accent:${p.accent};` : ''}${p.logo ? ` --tint:${p.logo.tint}; --logo-bg:${p.logo.bg};` : ''}`}
        aria-labelledby={`fr-t-${id}`} aria-describedby={`fr-d-${id}`}>
       <span class="fr-text">
         {p.logo && <span class="pj-logo" aria-hidden="true"><img src={p.logo.src} alt="" width="64" height="64" decoding="async" /></span>}
-        <span class="fr-title vtt" id={`fr-t-${id}`} style={`--vtt: vt-t-${id}`}>{p.title}<span class="vh"> case study</span><Arrow id={`f-${id}`} /></span>
+        <span class="fr-title vtt" id={`fr-t-${id}`} style={`--vtt: vt-t-${id}`}>{head}<span class="tw">{last}<span class="vh"> case study</span><Arrow id={`f-${id}`} /></span></span>
         <span class="fr-desc" id={`fr-d-${id}`}>
           {lead && <span class="fr-sum">{p.summary}</span>}
           <span class="fr-meta"><span class="led" data-state={statusState(p.status)} aria-hidden="true"></span>{p.status}</span>
@@ -44,6 +46,21 @@ const host = (p: CollectionEntry<'projects'>) => (p.data.demo ? new URL(p.data.d
         });
       }, swipe ? { root: grid, threshold: 0.6 } : { rootMargin: '-35% 0px -35% 0px' });
       cards.forEach(function (c) { io.observe(c); });
+      // Keyboard: the card taking focus comes wholly into view (and its dot with it, through the observer).
+      // Chromium does not scroll a scroller for an element that is already partly showing, so Tab left the
+      // next card a sliver at the edge of the screen, its focus ring with it. When it does scroll, a scroll
+      // issued inside the focus event cancelled its own and put the card back off screen, so this waits a
+      // frame and moves only a card that is still not wholly showing.
+      if (grid.classList.contains('carousel')) grid.addEventListener('focusin', function (e) {
+        var card = e.target.closest && e.target.closest('.fr-card');
+        if (!card || getComputedStyle(grid).overflowX !== 'auto') return;
+        requestAnimationFrame(function () {
+          var g = grid.getBoundingClientRect(), r = card.getBoundingClientRect();
+          if (r.left >= g.left - 1 && r.right <= g.right + 1) return;
+          var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+          grid.scrollBy({ left: r.left + r.width / 2 - (g.left + g.width / 2), behavior: still ? 'auto' : 'smooth' });
+        });
+      });
     });
   })();
 </script>

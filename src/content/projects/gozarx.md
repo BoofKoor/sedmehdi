@@ -24,6 +24,7 @@ Many people in Iran lose access to the open internet every day. The all-in-one a
 - A Telegram bot and a website, gozarx.net, where anyone can claim one free config a day, pick a location, and grow their daily allowance by inviting friends. No signup and no payments.
 - A Python backend: aiogram 3 over webhooks with FastAPI, an arq worker, PostgreSQL with SQLAlchemy and Alembic, and Redis, behind nginx and installed with one script on Docker Compose.
 - A React admin panel, a Next.js public site in Persian and English, and nightly database backups.
+- The admin panel became a project of its own, the [Spindle Admin Kit](/projects/spindle/): the same console, white-labelled for five businesses and run on synthetic data, with a live demo.
 
 ## Challenges
 
