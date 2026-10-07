@@ -354,11 +354,13 @@ async def demo_chunk(b, w, scheme, issues):
 def summary(issues):
     by_kind = defaultdict(list)
     for (kind, where, what), keys in issues.items(): by_kind[kind].append((where, what, sorted(keys)))
-    print(f'{sum(len(v) for v in by_kind.values())} distinct issues')
+    total = sum(len(v) for v in by_kind.values())
+    print(f'{total} distinct issues')
     for kind in sorted(by_kind):
         print(f'## {kind}: {len(by_kind[kind])}')
         for where, what, keys in sorted(by_kind[kind])[:12]: print(f'   {where:30} {what[:64]:64} @ {", ".join(keys[:4])}{" …" if len(keys) > 4 else ""}')
         if len(by_kind[kind]) > 12: print(f'   … and {len(by_kind[kind]) - 12} more')
+    return total
 
 
 async def main():
@@ -372,7 +374,7 @@ async def main():
     out = arg('--json')
     if out:
         with open(out, 'w', encoding='utf-8') as f: json.dump([[k[0], k[1], k[2], sorted(v)] for k, v in issues.items()], f, ensure_ascii=False)
-    summary(issues)
+    return summary(issues)
 
 
 if '--merge' in sys.argv:
@@ -380,6 +382,7 @@ if '--merge' in sys.argv:
     for path in sys.argv[sys.argv.index('--merge') + 1:]:
         with open(path, encoding='utf-8') as f:
             for kind, where, what, keys in json.load(f): merged[(kind, where, what)].update(keys)
-    summary(merged)
+    sys.exit(1 if summary(merged) else 0)
 else:
-    asyncio.run(main())
+    # exit 1 when any issue was found (it exited 0 whatever the count)
+    sys.exit(1 if asyncio.run(main()) else 0)

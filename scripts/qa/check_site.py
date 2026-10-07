@@ -597,5 +597,7 @@ async def run(base, label):
             key = f.split(': ', 1)[-1][:48]  # any message, with or without a colon
             if key in seen: continue
             seen.add(key); print('  FAIL', f)
+        return len(fails)
 
-asyncio.run(run(sys.argv[1], sys.argv[2]))
+# The exit status says what the report says, so a script or CI that runs this sees a failure (it exited 0 on any count).
+sys.exit(1 if asyncio.run(run(sys.argv[1], sys.argv[2])) else 0)

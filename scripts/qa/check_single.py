@@ -79,5 +79,8 @@ async def main():
         await b.close()
     print(f'blocked network requests: {len(blocked)}', sorted({re.sub(r"^(https?://[^/]+).*", r"\1", u) for u in blocked}))
     if DIST: print(f'failures: {len(fails)}'); [print('  FAIL', f) for f in fails]
+    return len(fails) + len(blocked)
 
-asyncio.run(main())
+# Exit 1 on any failure or any request beyond the file: it used to exit 0 and print "failures: 0" for a file that
+# reached another host, since blocked requests were only counted.
+sys.exit(1 if asyncio.run(main()) else 0)
