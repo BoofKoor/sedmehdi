@@ -220,7 +220,7 @@ export const hosting: BusinessProfile = {
         // A server renews every 30 days from its creation; a suspended one is 3 to 20 days past due.
         {
           id: "renews",
-          label: L("Renews", "تمدید"),
+          label: L("Renewal due", "موعد تمدید"),
           kind: "due",
           gen: (r, row, c) => {
             const now = c.now.getTime();

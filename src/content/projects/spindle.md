@@ -35,5 +35,5 @@ Every browser check first runs on a page broken on purpose, by a stylesheet, a s
 ## The numbers
 
 - 104.1 KB of JavaScript, gzipped, on the first load; every other page loads when it is opened.
-- 127 unit tests and 18 browser checks, each browser check proven on a broken page first.
+- 132 unit tests and 18 browser checks, each browser check proven on a broken page first.
 - No request to any other host: the data is made in the browser and nothing leaves it.

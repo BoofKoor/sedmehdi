@@ -60,6 +60,15 @@ describe.each(PROFILE_LIST.map((p) => [p.id, p] as [string, BusinessProfile]))("
     const found = strings(p).filter(([, s]) => RETIRED.test(s));
     expect(found).toEqual([]);
   });
+
+  it("names a due date so it reads on either side of the day: \"Due 3 days ago\", never \"Renews 3 weeks ago\"", () => {
+    // A due column prints a date ahead ("in 2 weeks") or one passed ("3 weeks ago", a lapsed renewal): its label
+    // has to be a noun that both read after, not a verb in the present tense.
+    for (const c of p.entities.flatMap((e) => e.columns).filter((c) => c.kind === "due")) {
+      expect(c.label.en).toMatch(/\bdue$/i);
+      expect(c.label.fa.trim()).not.toBe("");
+    }
+  });
 });
 
 describe("hosting", () => {
