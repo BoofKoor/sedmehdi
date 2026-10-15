@@ -22,15 +22,15 @@ Telabzar (<span lang="fa">تل‌ابزار</span>, abzar is Persian for tools) 
 
 ## What I built
 
-- **A menu for every file.** Seven kinds of file get their own menu, 31 operations in all, from compressing and trimming video to OCR, Whisper transcripts and locking a PDF. Long jobs show live progress, and encodes, PDF work, transcripts and downloads can be stopped midway. The files the bot sends can be sent again from its history.
+- **A menu for every file.** Seven kinds of file get their own menu, 31 operations in all, from compressing and trimming video to OCR, Whisper transcripts and locking a PDF. Long jobs show live progress, and encodes, most PDF work, transcripts and downloads can be stopped midway. Since October, the files the bot sends can be sent again from its history.
 - **Persian PDF to Word.** Poppler's pdftotext, a common PDF tool, reads "<span lang="fa">سلام</span>" (salam, hello) as "<span lang="fa">سالم</span>" (salem, healthy), because it reverses the ligature of lam and alef (<span lang="fa">لا</span>). Telabzar reads each glyph and restores the reading order, with OCR for scanned pages, so the Word file can be edited.
-- **One Python backend.** An aiogram 3 bot and arq workers share Redis and PostgreSQL, and the workers drive FFmpeg, LibreOffice and Tesseract. The whole stack runs as 12 Docker Compose services: a local Bot API server lets the bot handle files of up to 2 GB, and Caddy gets and renews its own certificates.
-- **A panel for the bot and its site.** A bilingual panel edits the bot's texts and buttons, holds its settings and users, and publishes telabzar.com. Each tool's page there has a phone that plays the bot's conversation in CSS alone, built from the bot's messages and keyboards and tested against its code.
+- **One Python backend.** An aiogram 3 bot and arq workers share Redis and PostgreSQL, and the workers drive FFmpeg, LibreOffice and Tesseract. The whole stack runs as 12 Docker Compose services: a local Bot API server lets the bot take in files of any size and send back new ones of up to 2 GB, and Caddy gets and renews its own certificates.
+- **A panel for the bot and its site.** A bilingual panel edits the bot's texts and buttons, manages its settings and users, and publishes telabzar.com. Each tool's page there has a phone that plays the bot's conversation in CSS alone, built from the bot's messages and keyboards and tested against its code.
 
 ## How it is tested
 
-By October 2026 there are 3,438 tests and 814 sabotage cases. Since August, every pull request runs the tests in two parallel CI jobs, one of them with the real FFmpeg, PDF tools and Caddy installed. The sabotage cases, rerun by hand, each break one piece of the code and name the test that should catch it, or for the controls the test that must stay green. They have caught tests that passed for the wrong reason. A checker built on the Unicode bidi rules guards one known trap, a number that jumps across a dot to the Latin word before it and flips a Persian line, in the bot's file lists and progress notes and on every phone of the site.
+By mid-October 2026 there are 3,438 tests and 814 sabotage cases. Since mid-August, every pull request runs the tests in two parallel CI jobs, and one of them now installs the real FFmpeg, PDF tools and Caddy. The sabotage cases, rerun by hand, each break one piece of the project and name the test that should catch it or, for the 26 controls, the tests that must stay green. They have caught tests that passed for the wrong reason. A checker built on the Unicode bidi rules guards one known trap, a number that jumps across a middle dot to the Latin word before it and scrambles a Persian line, in the bot's file lists and progress notes and on every phone of the site.
 
 ## Where it stands
 
-The bot is in production, and its site, telabzar.com, went up in October 2026. Every change so far has come through a pull request, 152 of them by mid-October.
+The bot is in production, and its site, telabzar.com, went up in October 2026. Every change to the repository so far has come through a pull request, 152 of them by mid-October.
