@@ -252,11 +252,16 @@ REACH = r"""async () => { const W = innerWidth, H = innerHeight;
     if (bar(t)) out.push((e.getAttribute('aria-label') || e.textContent || e.tagName).trim().replace(/\s+/g, ' ').slice(0, 26)); }
   for (const s of ends) s.scrollTop = 0; return out; }"""
 
-REVEAL = r"""async () => { const step = innerHeight * .7;
-  for (let y = 0; y < document.documentElement.scrollHeight; y += step) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 50)); }
-  window.scrollTo(0, document.documentElement.scrollHeight); await new Promise(r => setTimeout(r, 100));
-  document.querySelectorAll('.carousel').forEach(g => { g.scrollLeft = g.scrollWidth; g.scrollLeft = 0; });
-  await Promise.all([...document.images].map(i => i.decode().catch(() => null))); }"""
+REVEAL = r"""async () => { const step = innerHeight * .7, wait = ms => new Promise(r => setTimeout(r, ms));
+  for (let y = 0; y < document.documentElement.scrollHeight; y += step) { window.scrollTo(0, y); await wait(50); }
+  window.scrollTo(0, document.documentElement.scrollHeight); await wait(100);
+  // each carousel is swiped through in half-width steps, a frame apart, as a visitor would. A jump to the end and back
+  // renders no frame in between, so a lazy cover past Chrome's load margin (the fifth card at 720) never started and the
+  // decode below waited for ever. A hidden carousel (wider screens) has no width to step by and is skipped.
+  for (const g of document.querySelectorAll('.carousel')) { const s = g.clientWidth / 2; if (!s) continue;
+    for (let x = 0; x <= g.scrollWidth; x += s) { g.scrollLeft = x; await wait(120); } g.scrollLeft = 0; }
+  // capped, so an image that never loads is reported (img-broken) instead of hanging the audit
+  await Promise.all([...document.images].map(i => Promise.race([i.decode().catch(() => null), wait(5000)]))); }"""
 TOP = "() => { window.scrollTo(0, 0); for (const e of document.querySelectorAll('*')) if (e.scrollTop) e.scrollTop = 0; }"
 CLS_INIT = "window.__cls = 0; new PerformanceObserver(l => l.getEntries().forEach(e => { if (!e.hadRecentInput) window.__cls += e.value; })).observe({ type: 'layout-shift', buffered: true });"
 MOTION = r"""() => document.getAnimations().filter(a => a.playState === 'running' && a.effect && (a.effect.getTiming().iterations === Infinity || a.effect.getComputedTiming().endTime > 1000))

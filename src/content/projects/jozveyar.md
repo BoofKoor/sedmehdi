@@ -16,7 +16,7 @@ order: 5
 
 ## The idea
 
-Students in Iran study from printed course notes, called jozveh. Jozveyar (جزوه‌یار) lets university students, and students preparing for the konkur, the university entrance exam, upload their notes and see the exact price at once, with no signup, then receive them printed and bound, by post anywhere in Iran.
+Students in Iran study from printed course notes, called jozveh. Jozveyar (<span lang="fa">جزوه‌یار</span>) lets university students, and students preparing for the konkur, the university entrance exam, upload their notes and see the exact price at once, with no signup, then receive them printed and bound, by post anywhere in Iran.
 
 ## What I built
 
