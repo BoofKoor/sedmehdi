@@ -16,7 +16,7 @@ const ALIASES = {
 // terms with no brand icon get one of ours, by kind
 const KINDS = {
   aiogram: 'framework', remnawave: 'api', 'remnawave api': 'api', 'rest api': 'api', api: 'api', websockets: 'api',
-  monitoring: 'pulse', cron: 'terminal', 'reverse proxy': 'server', 'hand-made svg charts': 'chart',
+  monitoring: 'pulse', cron: 'terminal', 'reverse proxy': 'server', arq: 'server', 'hand-made svg charts': 'chart',
 };
 
 // original line icons on the monogram's 2:1 isometric grid (24x24, stroked)
