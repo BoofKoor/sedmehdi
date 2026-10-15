@@ -251,7 +251,7 @@ MOB = r"""() => { const q = s => document.querySelector(s), R = el => el.getBoun
            page: getComputedStyle(document.documentElement).getPropertyValue('--color-background').trim(), metas: [...document.querySelectorAll('meta[name="theme-color"]')].map(m => m.content),
            overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, back: shown(q('.back-btn')) ? q('.back-btn').getAttribute('href') : null,
            lockup: shown(q('.lockup')), rv: document.querySelectorAll('.rv').length }; }"""
-EXPECT_TAB = {'/': 'Home', '/projects/': 'Work', '/projects/gozarx/': 'Work', '/projects/spindle/': 'Work', '/about/': 'About', '/resume/': 'Résumé', '/contact/': 'Contact'}
+EXPECT_TAB = {'/': 'Home', '/projects/': 'Work', '/projects/gozarx/': 'Work', '/projects/spindle/': 'Work', '/projects/telabzar/': 'Work', '/about/': 'About', '/resume/': 'Résumé', '/contact/': 'Contact'}
 async def mobile_check(browser, base):
     """The phone experience (390x844, touch), both themes: a slim bar (60px or less) without the section links; a floating
     tab bar of five 44px+ tabs, the current section marked, labels 11px+ at 4.5:1 on the bar; nothing hidden under the
@@ -318,7 +318,7 @@ async def mobile_check(browser, base):
                 await pg.wait_for_timeout(800)
                 st = await pg.evaluate("[[...document.querySelectorAll('.dots .dot')].findIndex(d => d.classList.contains('on')), [...document.querySelectorAll('.framed.carousel .fr-card')].findIndex(c => c.classList.contains('is-inview'))]")
                 if st != [1, 1]: problems.append(f'mobile carousel: after a swipe to card 2 the dot/raised card are {st}')
-            for src, nxt in [('/projects/gozarx/', '/projects/spindle/'), ('/projects/spindle/', '/projects/tooti/'), ('/projects/jozveyar/', '/projects/gozarx/')]:
+            for src, nxt in [('/projects/gozarx/', '/projects/spindle/'), ('/projects/spindle/', '/projects/telabzar/'), ('/projects/telabzar/', '/projects/tooti/'), ('/projects/jozveyar/', '/projects/gozarx/')]:
                 await pg.goto(base + src); await pg.wait_for_timeout(400)
                 f = await pg.evaluate("""(() => { const tops = [...document.querySelectorAll('.fact')].map(e => Math.round(e.getBoundingClientRect().top)), chips = document.querySelector('.fact.wide .chips'), n = document.querySelector('.next-card');
                     const ct = chips ? [...chips.children].map(c => Math.round(c.getBoundingClientRect().top)) : [];
@@ -421,10 +421,10 @@ async def stack_check(browser, base):
     await ctx.close()
     return problems
 
-ORDER = ['/projects/gozarx/', '/projects/spindle/', '/projects/tooti/', '/projects/jozveyar/']
+ORDER = ['/projects/gozarx/', '/projects/spindle/', '/projects/telabzar/', '/projects/tooti/', '/projects/jozveyar/']
 async def order_check(browser, base):
-    """The four projects in their order everywhere they are listed: the desktop stack on Home and Work numbered 01 / 04
-    to 04 / 04, the phone carousel with four dots, the phone list, and the next-project card of every case study
+    """The five projects in their order everywhere they are listed: the desktop stack on Home and Work numbered 01 / 05
+    to 05 / 05, the phone carousel with five dots, the phone list, and the next-project card of every case study
     leading to the next one by order, round to the first."""
     problems = []
     for path in ['/', '/projects/']:

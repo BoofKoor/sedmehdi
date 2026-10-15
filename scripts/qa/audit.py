@@ -1,6 +1,6 @@
 """Full display audit, WCAG 2.2 AA plus the site's own rules, measured on the rendered pages.
 
-Site: 10 pages (the 404 too) x 8 widths (2560 to 320) x 2 themes. Demo (--demo): the admin demo at /lab/admin/, every
+Site: 11 pages (the 404 too) x 8 widths (2560 to 320) x 2 themes. Demo (--demo): the admin demo at /lab/admin/, every
 business x its 8 pages x both languages, at the same widths and themes.
 
 Checks (each issue is printed as kind, page and what, with the widths and themes it was seen at):
@@ -48,7 +48,7 @@ POS = [a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith('--') and sy
 B = (POS[0] if POS and not POS[0].endswith('.json') else 'http://localhost:4321').rstrip('/')
 HOST = urlparse(B).netloc
 DEMO = '--demo' in sys.argv
-PAGES = ['/', '/projects/', '/projects/gozarx/', '/projects/spindle/', '/projects/tooti/', '/projects/jozveyar/', '/about/', '/resume/', '/contact/', '/does-not-exist/']
+PAGES = ['/', '/projects/', '/projects/gozarx/', '/projects/spindle/', '/projects/telabzar/', '/projects/tooti/', '/projects/jozveyar/', '/about/', '/resume/', '/contact/', '/does-not-exist/']
 # /lab/admin/ is a real route (the admin demo, built into dist/lab/admin/ by `npm run build`), linked from the Spindle
 # case study. The site checks do not walk it (they assume the portfolio shell); --demo audits it.
 ROUTES = set(PAGES[:-1]) | {'/resume.pdf', '/lab/admin/'}
